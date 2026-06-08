@@ -1,0 +1,174 @@
+/* Responsive Design */
+
+/* Tablet */
+@media (min-width: 768px) {
+    .preparation-container {
+        max-width: 600px;
+    }
+    
+    .task-container,
+    .multimodal-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .module-navigator {
+        justify-content: center;
+    }
+    
+    .module-tab {
+        flex: 0 0 auto;
+        min-width: 140px;
+    }
+    
+    .stroop-options {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .medication-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Landscape on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .loading-content {
+        padding: 1rem;
+    }
+    
+    .logo-container {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .app-title {
+        font-size: 1.5rem;
+    }
+    
+    .app-subtitle {
+        margin-bottom: 1rem;
+    }
+    
+    .guide-illustration {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .consent-content {
+        max-height: 200px;
+    }
+    
+    .camera-preview {
+        aspect-ratio: 16/9;
+        max-height: 150px;
+    }
+    
+    .assessment-header {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .assessment-content {
+        padding: 0.75rem;
+    }
+}
+
+/* Large screens */
+@media (min-width: 1024px) {
+    #app {
+        display: flex;
+        justify-content: center;
+        background: #e2e8f0;
+    }
+    
+    .screen {
+        max-width: 480px;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        background: var(--background);
+    }
+    
+    #loading-screen {
+        max-width: none;
+    }
+}
+
+/* High contrast mode for accessibility */
+@media (prefers-contrast: high) {
+    :root {
+        --primary: #0052cc;
+        --text-primary: #000000;
+        --border: #000000;
+    }
+    
+    .btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #0f172a;
+        --surface: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border: #334155;
+    }
+    
+    .consent-content ul,
+    .instruction-box {
+        background: #1e293b;
+    }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+    .btn,
+    .task-btn,
+    .option-item,
+    .num-btn,
+    .stroop-btn,
+    .sort-card,
+    .medication-item {
+        min-height: 44px;
+    }
+    
+    .sequence-input .num-btn {
+        width: 72px;
+        height: 72px;
+    }
+}
+
+/* Font size adjustments for elderly users */
+@media (min-width: 400px) {
+    html {
+        font-size: 17px;
+    }
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 18px;
+    }
+}
+
+/* Safe area for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+    .assessment-header {
+        padding-top: calc(0.75rem + env(safe-area-inset-top));
+    }
+    
+    .recording-indicator {
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    }
+}

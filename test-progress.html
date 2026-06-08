@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>进度条测试</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/assessment.css">
+    <style>
+        .test-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .test-btn {
+            padding: 0.8rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .test-btn:hover {
+            background: var(--primary-dark);
+        }
+        .progress-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>AD-Care 进度条测试</h1>
+        
+        <!-- 模拟评估页面的头部 -->
+        <div class="header">
+            <div class="header-info">
+                <span class="session-id">会话: TEST1234</span>
+                <span class="progress-text">进度: <span id="progress-display">0%</span></span>
+            </div>
+        </div>
+        
+        <div class="test-controls">
+            <button class="test-btn" onclick="testCompleteTask('A', 'memory')">标记A模块-记忆任务完成</button>
+            <button class="test-btn" onclick="testCompleteTask('A', 'executive')">标记A模块-执行功能任务完成</button>
+            <button class="test-btn" onclick="testCompleteTask('A', 'language')">标记A模块-语言任务完成</button>
+            <button class="test-btn" onclick="testCompleteTask('A', 'spatial')">标记A模块-空间任务完成</button>
+            
+            <button class="test-btn" onclick="testCompleteTask('B', 'emotional')">标记B模块-情绪任务完成</button>
+            
+            <button class="test-btn" onclick="testCompleteTask('C', 'medication')">标记C模块-药物识别完成</button>
+            <button class="test-btn" onclick="testCompleteTask('C', 'appointment')">标记C模块-线上预约完成</button>
+            <button class="test-btn" onclick="testCompleteTask('C', 'finance')">标记C模块-财务计算完成</button>
+            <button class="test-btn" onclick="testCompleteTask('C', 'route')">标记C模块-路线规划完成</button>
+            <button class="test-btn" onclick="testCompleteTask('C', 'social')">标记C模块-社交互动完成</button>
+            
+            <button class="test-btn" onclick="testResetProgress()" style="background: var(--danger);">重置进度</button>
+        </div>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px;">
+            <h3>测试说明:</h3>
+            <ul>
+                <li>点击按钮模拟完成不同的评估任务</li>
+                <li>观察上方进度条是否正确更新</li>
+                <li>总共有12个任务，完成所有任务后进度应该显示100%</li>
+                <li>可以点击重置按钮重新开始测试</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 模拟ADCareApp的进度管理功能
+        class TestProgressManager {
+            constructor() {
+                this.completedTasks = new Set();
+                this.totalTasks = 12;
+                this.updateProgressDisplay();
+            }
+
+            updateProgressDisplay() {
+                const completed = this.completedTasks.size;
+                const progress = Math.round((completed / this.totalTasks) * 100);
+                document.getElementById('progress-display').textContent = `${progress}%`;
+                console.log(`进度更新: ${completed}/${this.totalTasks} (${progress}%)`);
+            }
+
+            markTaskCompleted(module, task) {
+                const taskKey = `${module}-${task}`;
+                if (!this.completedTasks.has(taskKey)) {
+                    this.completedTasks.add(taskKey);
+                    this.updateProgressDisplay();
+                    alert(`已标记 ${module} 模块 - ${task} 任务完成`);
+                } else {
+                    alert(`${module} 模块 - ${task} 任务已经标记为完成`);
+                }
+            }
+
+            resetProgress() {
+                this.completedTasks.clear();
+                this.updateProgressDisplay();
+                alert('进度已重置');
+            }
+        }
+
+        // 初始化测试管理器
+        const progressManager = new TestProgressManager();
+
+        // 测试函数
+        function testCompleteTask(module, task) {
+            progressManager.markTaskCompleted(module, task);
+        }
+
+        function testResetProgress() {
+            progressManager.resetProgress();
+        }
+    </script>
+</body>
+</html>
