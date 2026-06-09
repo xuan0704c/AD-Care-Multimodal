@@ -1,6 +1,12 @@
 /* Assessment Screen */
 #assessment-screen {
     background: var(--background);
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .assessment-header {
