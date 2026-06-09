@@ -390,9 +390,19 @@
 
             async init() {
                 this.bindEvents();
-                await this.showLoading();
-                await this.initSystem();
-                this.showScreen('preparation');
+                const prepCompleted = sessionStorage.getItem('preparationCompleted') === 'true';
+                if (!prepCompleted) {
+                    await this.showLoading();
+                    await this.initSystem();
+                    this.showScreen('preparation');
+                } else {
+                    await this.initSystem();
+                    this.showScreen('assessment');
+                    await this.mediaRecorder.startRecording();
+                    this.startRecordingTimer();
+                    this.isRecording = true;
+                    this.dataLogger.logEvent('assessment_resumed', { reason: 'refresh_after_preparation' });
+                }
             }
 
             bindEvents() {
@@ -436,11 +446,14 @@
                 ];
 
                 for (const step of steps) {
-                    await this.delay(400);
+                    await this.delay(200);
                     progress.style.width = step.percent + '%';
                     text.textContent = step.text;
+
+                    if (step.percent === 100) {
+                        await this.delay(300);
+                    }
                 }
-                await this.delay(500);
             }
 
             async initSystem() {
@@ -579,6 +592,7 @@
             }
 
             async startAssessment() {
+                sessionStorage.setItem('preparationCompleted', 'true');
                 this.showScreen('assessment');
                 await this.mediaRecorder.startRecording();
                 this.startRecordingTimer();
@@ -707,6 +721,7 @@
                     this.sessionManager.clearSession();
                     this.dataLogger.clearLogs();
                     this.mediaRecorder.clearData();
+                    sessionStorage.removeItem('preparationCompleted');
                     alert('数据已删除。感谢您的参与。');
                     location.reload();
                 }

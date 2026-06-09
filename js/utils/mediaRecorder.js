@@ -13,15 +13,25 @@ class MediaRecorder {
 
     async requestPermissions() {
         try {
-            this.videoStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, frameRate: 15 },
-                audio: false
-            });
+            // 复用准备阶段已获取的视频流，避免重复请求权限
+            if (window.previewStream && window.previewStream.getTracks().some(t => t.readyState === 'live')) {
+                this.videoStream = window.previewStream;
+            } else {
+                this.videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, frameRate: 15 },
+                    audio: false
+                });
+            }
             
-            this.audioStream = await navigator.mediaDevices.getUserMedia({
-                audio: { sampleRate: 16000, channelCount: 1 },
-                video: false
-            });
+            // 复用准备阶段已获取的音频流，避免重复请求权限
+            if (window.previewAudioStream && window.previewAudioStream.getTracks().some(t => t.readyState === 'live')) {
+                this.audioStream = window.previewAudioStream;
+            } else {
+                this.audioStream = await navigator.mediaDevices.getUserMedia({
+                    audio: { sampleRate: 16000, channelCount: 1 },
+                    video: false
+                });
+            }
             
             return { video: true, audio: true };
         } catch (e) {
@@ -209,6 +219,10 @@ class MediaRecorder {
         if (this.audioStream) {
             this.audioStream.getTracks().forEach(track => track.stop());
         }
+        
+        // 清理全局流引用
+        window.previewStream = null;
+        window.previewAudioStream = null;
     }
 
     getVideoSegments() {

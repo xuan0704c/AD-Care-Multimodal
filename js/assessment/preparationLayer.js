@@ -76,7 +76,8 @@ class PreparationLayer {
             analyser.getByteFrequencyData(dataArray);
             const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
             
-            stream.getTracks().forEach(track => track.stop());
+            // 保留音频流供后续录制复用，避免重复请求权限
+            window.previewAudioStream = stream;
             audioContext.close();
             
             this.checks.microphone = { 
@@ -201,6 +202,12 @@ class PreparationLayer {
         if (window.previewStream) {
             window.previewStream.getTracks().forEach(track => track.stop());
             window.previewStream = null;
+        }
+        
+        // Stop audio preview stream
+        if (window.previewAudioStream) {
+            window.previewAudioStream.getTracks().forEach(track => track.stop());
+            window.previewAudioStream = null;
         }
         
         const video = document.getElementById('preview-video');
