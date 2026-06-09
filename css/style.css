@@ -218,6 +218,12 @@ html, body {
 /* Preparation Screen */
 #preparation-screen {
     background: var(--background);
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .preparation-container {
@@ -577,6 +583,10 @@ html, body {
     align-items: center;
     padding: 1.5rem;
     background: var(--background);
+    margin: 0 auto;
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .result-container {
