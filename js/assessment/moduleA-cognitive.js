@@ -186,6 +186,11 @@ class ModuleACognitive {
             total: total,
             attempts: this.taskData.memory.attempts
         });
+        
+        // 自动跳转到执行功能测试
+        setTimeout(() => {
+            this.app.switchTask('A', 'executive');
+        }, 2000);
     }
 
     renderExecutiveTask(container) {
@@ -311,6 +316,11 @@ class ModuleACognitive {
             total: total,
             avgReactionTime: avgReactionTime
         });
+        
+        // 自动跳转到语言测试
+        setTimeout(() => {
+            this.app.switchTask('A', 'language');
+        }, 2000);
     }
 
     renderLanguageTask(container) {
@@ -393,7 +403,7 @@ class ModuleACognitive {
                 <div class="score">${count}</div>
                 <div class="score-label">语言流畅性得分</div>
                 <p>您在60秒内说出了${count}个词语</p>
-                <button class="start-task-btn" onclick="adCareApp.switchTask('A', 'spatial')">继续</button>
+                <p style="margin-top: 1rem; color: #666;">即将自动跳转到下一项测试...</p>
             </div>
         `;
         this.app.markTaskCompleted('A', 'language');
@@ -401,6 +411,11 @@ class ModuleACognitive {
             task: 'language',
             score: count
         });
+        
+        // 自动跳转到视空间测试
+        setTimeout(() => {
+            this.app.switchTask('A', 'spatial');
+        }, 2000);
     }
 
     renderSpatialTask(container) {
@@ -489,5 +504,11 @@ class ModuleACognitive {
             task: 'spatial',
             attempts: this.taskData.spatial.attempts.length
         });
+        
+        // 自动跳转到日常功能测试
+        setTimeout(() => {
+            this.app.switchModule('C');
+            this.app.switchTask('C', 'medication');
+        }, 2000);
     }
 }

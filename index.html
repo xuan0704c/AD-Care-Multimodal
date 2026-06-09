@@ -385,6 +385,10 @@
                 this.completedTasks = new Set();
                 this.totalTasks = 12; // 3个模块 × 每个模块4个任务
                 
+                // 多模态采集全局管理
+                this.multimodalCollector = null;
+                this.multimodalContainer = null;
+                
                 this.init();
             }
 
@@ -462,6 +466,13 @@
                 await this.dataLogger.init();
                 document.getElementById('session-id-display').textContent = this.sessionManager.sessionId.substring(0, 8);
                 this.updateProgressDisplay();
+                
+                // 提前初始化多模态采集器（不在情绪行为界面时也能收集）
+                this.multimodalContainer = document.getElementById('multimodal-container');
+                if (!this.multimodalCollector) {
+                    this.multimodalCollector = new ModuleBEmotional(this);
+                    this.multimodalCollector.initializeCollection();
+                }
             }
 
             updateProgressDisplay() {
@@ -622,14 +633,26 @@
                 document.querySelector(`.module-tab[data-module="${module}"]`).classList.add('active');
                 document.querySelectorAll('.module-content').forEach(c => c.classList.remove('active'));
                 document.getElementById(`module-${module.toLowerCase()}-content`).classList.add('active');
+                
+                // 如果离开情绪行为模块，暂停采集显示但继续后台收集
+                if (this.currentModule === 'B' && this.multimodalCollector) {
+                    this.multimodalCollector.pauseCollection();
+                }
+                
                 this.currentModule = module;
                 this.dataLogger.logEvent('module_switch', { module });
                 
                 if (module === 'B') {
                     const container = document.getElementById('multimodal-container');
                     container.innerHTML = '';
-                    const emotional = new ModuleBEmotional(this);
-                    emotional.render(container);
+                    // 使用全局多模态采集器，保持采集状态
+                    if (this.multimodalCollector) {
+                        this.multimodalCollector.render(container);
+                        this.multimodalCollector.resumeCollection();
+                    } else {
+                        this.multimodalCollector = new ModuleBEmotional(this);
+                        this.multimodalCollector.render(container);
+                    }
                 } else if (module === 'C') {
                     this.switchTask('C', 'medication');
                 }
