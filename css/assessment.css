@@ -108,9 +108,9 @@
 .task-btn {
     flex-shrink: 0;
     padding: 0.5rem 1rem;
-    border: 1px solid var(--border);
+    border: 2px solid #808080;
     border-radius: 20px;
-    background: var(--surface);
+    background: #ffffff;
     font-size: 0.8125rem;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -309,9 +309,9 @@
 
 .stroop-btn {
     padding: 1rem;
-    border: 2px solid var(--border);
+    border: 2px solid #707070;
     border-radius: var(--radius);
-    background: var(--surface);
+    background: #ffffff;
     font-size: 1.125rem;
     font-weight: 600;
     cursor: pointer;
@@ -354,14 +354,14 @@
     width: 100px;
     height: 130px;
     border-radius: var(--radius);
-    border: 2px solid var(--border);
+    border: 2px solid #757575;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: var(--surface);
+    background: #ffffff;
 }
 
 .sort-card:hover {
@@ -454,9 +454,9 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem;
-    background: var(--surface);
+    background: #ffffff;
     border-radius: var(--radius);
-    border: 2px solid transparent;
+    border: 2px solid #858585;
     cursor: pointer;
     transition: all 0.2s ease;
 }

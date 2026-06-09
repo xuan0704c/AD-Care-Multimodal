@@ -50,11 +50,21 @@ class ModuleACognitive {
     }
 
     startMemoryTest(container) {
+        const generateRandomSequence = (length) => {
+            const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            const sequence = [];
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * nums.length);
+                sequence.push(nums.splice(randomIndex, 1)[0]);
+            }
+            return sequence;
+        };
+        
         const sequences = [
-            [3, 7, 1, 9],
-            [2, 5, 8, 3, 6],
-            [4, 1, 7, 2, 9, 5],
-            [8, 3, 6, 1, 4, 7, 2]
+            generateRandomSequence(4),
+            generateRandomSequence(5),
+            generateRandomSequence(6),
+            generateRandomSequence(7)
         ];
         
         let currentLevel = 0;

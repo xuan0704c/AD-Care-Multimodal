@@ -115,8 +115,8 @@
     }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
+/* Dark mode support - DISABLED for forced light theme */
+/* @media (prefers-color-scheme: dark) {
     :root {
         --background: #0f172a;
         --surface: #1e293b;
@@ -129,7 +129,7 @@
     .instruction-box {
         background: #1e293b;
     }
-}
+} */
 
 /* Touch device optimizations */
 @media (pointer: coarse) {

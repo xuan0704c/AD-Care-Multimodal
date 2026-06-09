@@ -402,6 +402,7 @@
                     this.startRecordingTimer();
                     this.isRecording = true;
                     this.dataLogger.logEvent('assessment_resumed', { reason: 'refresh_after_preparation' });
+                    this.switchTask('A', 'memory');
                 }
             }
 
@@ -629,6 +630,8 @@
                     container.innerHTML = '';
                     const emotional = new ModuleBEmotional(this);
                     emotional.render(container);
+                } else if (module === 'C') {
+                    this.switchTask('C', 'medication');
                 }
             }
 
