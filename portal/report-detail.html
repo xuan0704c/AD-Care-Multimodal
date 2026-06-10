@@ -7,6 +7,7 @@
     <script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
     <script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
     <script src="https://modao.cc/agent-py/static/source/js/echarts.min.5.4.3.js"></script>
+    <script src="mock-api.js"></script>
     <style>
         body { background-color: #f8fafc; }
         .app-container {
@@ -71,8 +72,7 @@
             const minutes = String(now.getMinutes()).padStart(2, '0');
             document.getElementById('clock').textContent = `${hours}:${minutes}`;
         }
-        updateDateTime();
-        setInterval(updateDateTime, 60000);
+
 
         function getQueryParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -82,7 +82,7 @@
         const SESSION_PREFIX = 'adcare_session_';
         const PATIENTS_KEY = 'portal_patients';
         const ARCHIVED_KEY = 'adcare_archived_reports';
-        const sessionId = getQueryParam('sessionId');
+        const sessionId = getQueryParam('sessionId') || 'default_report';
 
         function loadPatients() {
             const stored = localStorage.getItem(PATIENTS_KEY);
@@ -161,43 +161,46 @@
             return { level: '高风险', grade: 'LEVEL 3', color: 'text-red-600', bg: 'from-red-50 to-rose-50', border: 'border-red-100', bar: 'bg-red-400' };
         }
 
-        function renderReport() {
+        async function renderReport() {
             const container = document.getElementById('report-content');
 
-            if (!sessionId) {
-                container.innerHTML = `
-                    <div class="text-center py-12 text-gray-400">
-                        <iconify-icon icon="mdi:file-document-outline" width="48" class="mx-auto mb-2 opacity-50"></iconify-icon>
-                        <p class="text-sm">未找到报告信息</p>
-                    </div>
-                `;
-                return;
-            }
+            // 显示加载状态
+            container.innerHTML = `
+                <div class="text-center py-12 text-gray-400">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4"></div>
+                    <p class="text-sm">正在生成评估报告...</p>
+                </div>
+            `;
 
-            const data = loadSession(sessionId);
-            if (!data) {
-                container.innerHTML = `
-                    <div class="text-center py-12 text-gray-400">
-                        <iconify-icon icon="mdi:file-document-outline" width="48" class="mx-auto mb-2 opacity-50"></iconify-icon>
-                        <p class="text-sm">报告不存在或已被删除</p>
-                    </div>
-                `;
-                return;
-            }
+            try {
+                // 调用模拟API获取评估数据
+                const assessmentData = await fetchAssessmentReport(sessionId);
+                
+                const patients = loadPatients();
+                let patient = null;
+                let patientName = '未知患者';
+                let patientAge = '--';
+                let patientGender = '--';
+                let patientRoom = '--';
+                
+                // 如果有sessionId，尝试加载真实患者数据
+                if (sessionId && !sessionId.startsWith('MOCK_')) {
+                    const data = loadSession(sessionId);
+                    if (data) {
+                        patient = patients.find(p => String(p.id) === String(data.patientId));
+                        patientName = patient ? patient.name : (data.patientName || '未知患者');
+                        patientAge = patient ? patient.age : (data.patientAge || '--');
+                        patientGender = patient ? patient.gender : (data.patientGender || '--');
+                        patientRoom = patient ? patient.room : '--';
+                    }
+                }
 
-            const patients = loadPatients();
-            const patient = patients.find(p => String(p.id) === String(data.patientId));
-            const patientName = patient ? patient.name : (data.patientName || '未知患者');
-            const patientAge = patient ? patient.age : (data.patientAge || '--');
-            const patientGender = patient ? patient.gender : (data.patientGender || '--');
-            const patientRoom = patient ? patient.room : '--';
+                const score = assessmentData.score;
+                const risk = assessmentData.riskAssessment;
+                const languageCognition = assessmentData.languageCognition;
 
-            const duration = data.startTime && data.endTime ? Math.floor((data.endTime - data.startTime) / 1000) : 0;
-            const score = generateMockScore(duration);
-            const risk = getRiskLevel(score);
-
-            const history = getPatientHistory(data.patientId);
-            const hasHistory = history.length >= 2;
+                const history = getPatientHistory(sessionId);
+                const hasHistory = history.length >= 2;
 
             // 构建历史趋势数据（最多取最近7次）
             const chartLabels = [];
@@ -212,143 +215,97 @@
                 });
             }
 
-            container.innerHTML = `
-                <!-- 患者基本信息卡片 -->
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4">
-                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl border-4 border-blue-50">
-                        ${patientName.charAt(0)}
-                    </div>
-                    <div>
-                        <h2 class="text-lg font-bold">${patientName} <span class="text-sm font-normal text-gray-500 ml-1">${patientAge}岁 · ${patientGender}</span></h2>
-                        <p class="text-xs text-gray-400">报告编号：${data.sessionId}</p>
-                        <p class="text-xs text-gray-400">采集时间：${formatDateTime(data.startTime)}</p>
-                        ${patientRoom !== '--' ? `<p class="text-xs text-gray-400">房间号：${patientRoom}</p>` : ''}
-                    </div>
-                </div>
-
-                <!-- 核心结论区 -->
-                <div class="bg-gradient-to-br ${risk.bg} p-6 rounded-3xl border ${risk.border} relative overflow-hidden">
-                    <div class="absolute -top-4 -right-4 w-24 h-24 bg-white/20 rounded-full"></div>
-                    <div class="relative z-10">
-                        <p class="text-sm font-bold ${risk.color} mb-1">综合风险评估结果</p>
-                        <div class="flex items-end gap-2 mb-4">
-                            <span class="text-4xl font-black ${risk.color}">${risk.level}</span>
-                            <span class="text-sm ${risk.color} opacity-60 pb-1 font-bold">预警等级：${risk.grade}</span>
+                container.innerHTML = `
+                    <!-- 患者基本信息卡片 -->
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl border-4 border-blue-50">
+                            ${patientName.charAt(0)}
                         </div>
-                        <p class="text-xs leading-relaxed bg-white/50 p-3 rounded-xl border ${risk.border}/50">
-                            本次多模态认知评估综合得分为 <span class="font-bold underline">${score}/100</span>。${score >= 85 ? '各维度表现良好，建议保持当前生活状态并定期随访。' : score >= 75 ? '部分维度存在轻度波动，建议适当增加认知训练并关注生活方式。' : score >= 65 ? '在语音流利度、步态平衡及延迟记忆维度表现出明显异常倾向，建议在3个月内进行临床神经心理学复核。' : '多维度评估结果异常，建议尽快预约三甲医院记忆门诊进行详细检查。'}
+                        <div>
+                            <h2 class="text-lg font-bold">${patientName} <span class="text-sm font-normal text-gray-500 ml-1">${patientAge}岁 · ${patientGender}</span></h2>
+                            <p class="text-xs text-gray-400">报告编号：${assessmentData.sessionId}</p>
+                            <p class="text-xs text-gray-400">采集时间：${formatDateTime(assessmentData.startTime)}</p>
+                            ${patientRoom !== '--' ? `<p class="text-xs text-gray-400">房间号：${patientRoom}</p>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- 核心结论区 -->
+                    <div class="bg-gradient-to-br ${risk.bg} p-6 rounded-3xl border ${risk.border} relative overflow-hidden">
+                        <div class="absolute -top-4 -right-4 w-24 h-24 bg-white/20 rounded-full"></div>
+                        <div class="relative z-10">
+                            <p class="text-sm font-bold ${risk.color} mb-1">综合风险评估结果</p>
+                            <div class="flex items-end gap-2 mb-4">
+                                <span class="text-4xl font-black ${risk.color}">${risk.level}</span>
+                                <span class="text-sm ${risk.color} opacity-60 pb-1 font-bold">预警等级：${risk.grade}</span>
+                            </div>
+                            <p class="text-xs leading-relaxed bg-white/50 p-3 rounded-xl border ${risk.border}/50">
+                                ${risk.summary}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 历史趋势对比 -->
+                    ${hasHistory ? `
+                    <div class="bg-white p-5 rounded-3xl border border-gray-100">
+                        <h3 class="text-sm font-bold mb-4 flex items-center gap-2">
+                            <iconify-icon class="text-blue-600" icon="mdi:chart-line"></iconify-icon> 认知功能趋势对比
+                        </h3>
+                        <div class="w-full h-40" id="trendChart"></div>
+                        <p class="text-[10px] text-gray-400 text-center mt-2">* 数据对比自过去 ${chartLabels.length} 次筛查记录</p>
+                    </div>
+                    ` : ''}
+
+                    <!-- 详细维度拆解 -->
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-bold px-1">详细维度拆解</h3>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 flex gap-4">
+                            <div class="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
+                                <iconify-icon icon="mdi:microphone" width="20"></iconify-icon>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold">语言与认知</span>
+                                    <span class="text-xs ${risk.color} font-bold">${languageCognition.level}</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full ${risk.bar}" style="width: ${languageCognition.percentage}%"></div>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-2">${languageCognition.description}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 临床干预建议 -->
+                    <div class="bg-blue-600 p-5 rounded-3xl text-white shadow-xl shadow-blue-200 mb-8">
+                        <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                            <iconify-icon class="text-blue-200" icon="mdi:medical-bag"></iconify-icon> 社区干预及临床建议
+                        </h3>
+                        <ul class="text-xs space-y-2 opacity-90 leading-relaxed">
+                            ${assessmentData.interventionSuggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="pb-24 text-center">
+                        <p class="text-[10px] text-gray-400 italic">
+                            报告由智慧忆护 AI 引擎自动生成<br/>
+                            边缘计算平台序列号：EDGE-CNS-2026-X8
                         </p>
                     </div>
-                </div>
+                `;
 
-                <!-- 历史趋势对比 -->
-                ${hasHistory ? `
-                <div class="bg-white p-5 rounded-3xl border border-gray-100">
-                    <h3 class="text-sm font-bold mb-4 flex items-center gap-2">
-                        <iconify-icon class="text-blue-600" icon="mdi:chart-line"></iconify-icon> 认知功能趋势对比
-                    </h3>
-                    <div class="w-full h-40" id="trendChart"></div>
-                    <p class="text-[10px] text-gray-400 text-center mt-2">* 数据对比自过去 ${chartLabels.length} 次筛查记录</p>
-                </div>
-                ` : ''}
-
-                <!-- 详细维度拆解 -->
-                <div class="space-y-3">
-                    <h3 class="text-sm font-bold px-1">详细维度拆解</h3>
-                    <div class="bg-white p-4 rounded-2xl border border-gray-100 flex gap-4">
-                        <div class="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
-                            <iconify-icon icon="mdi:microphone" width="20"></iconify-icon>
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs font-bold">语音与认知</span>
-                                <span class="text-xs ${score >= 75 ? 'text-green-500' : score >= 65 ? 'text-yellow-500' : 'text-red-500'} font-bold">${score >= 75 ? '正常' : score >= 65 ? '轻度波动' : '异常 (' + (score - 80) + '%)'}</span>
-                            </div>
-                            <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full ${risk.bar}" style="width: ${Math.max(30, Math.min(100, score))}%"></div>
-                            </div>
-                            <p class="text-[10px] text-gray-400 mt-2">${score >= 75 ? '语音流利度良好，语义提取成功率较高。' : '关键词提取成功率偏低，出现部分无意义语义重复。'}</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl border border-gray-100 flex gap-4">
-                        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                            <iconify-icon icon="mdi:walk" width="20"></iconify-icon>
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs font-bold">步态与姿态</span>
-                                <span class="text-xs ${score >= 70 ? 'text-green-500' : score >= 60 ? 'text-yellow-500' : 'text-red-500'} font-bold">${score >= 70 ? '正常' : score >= 60 ? '轻度波动' : '异常'}</span>
-                            </div>
-                            <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full ${score >= 70 ? 'bg-green-400' : score >= 60 ? 'bg-yellow-400' : 'bg-red-400'}" style="width: ${Math.max(30, Math.min(100, score + 5))}%"></div>
-                            </div>
-                            <p class="text-[10px] text-gray-400 mt-2">${score >= 70 ? '步态平稳，左右脚支撑力矩基本平衡。' : '步频略有减慢，左右脚支撑力矩存在不平衡。'}</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl border border-gray-100 flex gap-4">
-                        <div class="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
-                            <iconify-icon icon="mdi:heart-pulse" width="20"></iconify-icon>
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs font-bold">生理指标</span>
-                                <span class="text-xs text-green-500 font-bold">正常</span>
-                            </div>
-                            <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-green-400" style="width: 92%"></div>
-                            </div>
-                            <p class="text-[10px] text-gray-400 mt-2">心率及呼吸频率在监测期间表现平稳，无应激反应。</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 临床干预建议 -->
-                <div class="bg-blue-600 p-5 rounded-3xl text-white shadow-xl shadow-blue-200 mb-8">
-                    <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
-                        <iconify-icon class="text-blue-200" icon="mdi:medical-bag"></iconify-icon> 社区干预及临床建议
-                    </h3>
-                    <ul class="text-xs space-y-2 opacity-90 leading-relaxed">
-                        ${score >= 85 ? `
-                            <li>• <strong>定期随访：</strong> 建议每 6 个月进行一次认知评估复测。</li>
-                            <li>• <strong>生活方式：</strong> 保持现有饮食与运动习惯，适当增加社交活动。</li>
-                            <li>• <strong>认知训练：</strong> 可自愿进行每日 15 分钟的阅读或益智游戏。</li>
-                        ` : score >= 75 ? `
-                            <li>• <strong>关注变化：</strong> 建议每 3 个月进行一次认知评估复测。</li>
-                            <li>• <strong>家庭训练：</strong> 进行每日 20 分钟的回忆疗法（翻看老照片描述）。</li>
-                            <li>• <strong>生活方式：</strong> 增加地中海饮食比例，每日进行 15 分钟平衡训练。</li>
-                        ` : score >= 65 ? `
-                            <li>• <strong>临床转诊：</strong> 建议预约三甲医院记忆门诊进行 MRI 扫描。</li>
-                            <li>• <strong>家庭训练：</strong> 进行每日 20 分钟的回忆疗法（翻看老照片描述）。</li>
-                            <li>• <strong>生活方式：</strong> 增加地中海饮食比例，每日进行 15 分钟平衡训练。</li>
-                        ` : `
-                            <li>• <strong>紧急转诊：</strong> 建议尽快前往三甲医院神经内科或记忆门诊就诊。</li>
-                            <li>• <strong>家属配合：</strong> 家属需加强日常看护，避免患者单独外出。</li>
-                            <li>• <strong>定期复查：</strong> 遵医嘱每月复查，密切关注病情进展。</li>
-                        `}
-                    </ul>
-                </div>
-
-                <div class="pb-24 text-center">
-                    <p class="text-[10px] text-gray-400 italic">
-                        报告由智慧忆护 AI 引擎自动生成<br/>
-                        边缘计算平台序列号：EDGE-CNS-2026-X8
-                    </p>
-                </div>
-            `;
-
-            // 初始化趋势图
-            if (hasHistory && document.getElementById('trendChart')) {
-                const trendChart = echarts.init(document.getElementById('trendChart'));
-                trendChart.setOption({
-                    grid: { top: 10, bottom: 20, left: 30, right: 10 },
-                    xAxis: {
-                        type: 'category',
-                        data: chartLabels,
-                        axisLine: { lineStyle: { color: '#f1f5f9' } },
-                        axisLabel: { color: '#94a3b8', fontSize: 10 }
-                    },
-                    yAxis: {
-                        type: 'value',
+                // 初始化趋势图
+                if (hasHistory && document.getElementById('trendChart')) {
+                    const trendChart = echarts.init(document.getElementById('trendChart'));
+                    trendChart.setOption({
+                        grid: { top: 10, bottom: 20, left: 30, right: 10 },
+                        xAxis: {
+                            type: 'category',
+                            data: chartLabels,
+                            axisLine: { lineStyle: { color: '#f1f5f9' } },
+                            axisLabel: { color: '#94a3b8', fontSize: 10 }
+                        },
+                        yAxis: {
+                            type: 'value',
                         max: 100,
                         axisLabel: { color: '#94a3b8', fontSize: 10 },
                         splitLine: { lineStyle: { color: '#f8fafc' } }
@@ -367,7 +324,16 @@
                             ])
                         }
                     }]
-                });
+                    });
+                }
+            } catch (error) {
+                console.error('生成报告失败:', error);
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-400">
+                        <iconify-icon icon="mdi:alert-circle-outline" width="48" class="mx-auto mb-2 opacity-50"></iconify-icon>
+                        <p class="text-sm">报告生成失败，请重试</p>
+                    </div>
+                `;
             }
         }
 
@@ -425,8 +391,13 @@
             alert('报告已发送至家属APP');
         }
 
-        renderReport();
-        updateArchiveBtn();
+        // 页面加载完成后渲染报告
+        document.addEventListener('DOMContentLoaded', async function() {
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+            await renderReport();
+            updateArchiveBtn();
+        });
     </script>
 </body>
 </html>

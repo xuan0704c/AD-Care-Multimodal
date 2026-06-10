@@ -122,10 +122,10 @@
                 <iconify-icon icon="mdi:file-chart" width="24"></iconify-icon>
                 <span class="text-[10px] mt-1 font-bold">报告查询</span>
             </div>
-            <button id="logout-btn" class="flex flex-col items-center text-gray-400 hover:text-red-500 transition-colors">
-                <iconify-icon icon="mdi:logout" width="24"></iconify-icon>
-                <span class="text-[10px] mt-1">退出</span>
-            </button>
+            <a href="profile.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                <iconify-icon icon="mdi:account" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1">我的</span>
+            </a>
         </div>
 
         <!-- 报告详情模态框 -->
@@ -152,11 +152,8 @@
         updateDateTime();
         setInterval(updateDateTime, 60000);
 
-        // 退出登录
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            sessionStorage.removeItem('portal_logged_in');
-            window.location.href = 'login.html';
-        });
+        // 个人中心
+        // 点击"我的"跳转到个人中心页面
 
         // ===== 报告数据管理 =====
         const SESSION_PREFIX = 'adcare_session_';
