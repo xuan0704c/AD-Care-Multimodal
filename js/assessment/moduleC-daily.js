@@ -35,6 +35,10 @@ class ModuleCDaily {
     }
 
     renderMedicationTask(container) {
+        if (window.adCareApp && window.adCareApp.mediaRecorder) {
+            window.adCareApp.mediaRecorder.startTaskRecording('daily_medication', 'daily');
+        }
+        
         const header = UIComponents.createTaskHeader(
             '药物识别任务',
             '请选择正确的药物类别'
@@ -57,8 +61,15 @@ class ModuleCDaily {
         
         const showMedication = () => {
             if (currentIndex >= medications.length) {
+                if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                    window.adCareApp.mediaRecorder.stopTaskRecording();
+                }
                 this.showDailyResults(container, 'medication', correctCount, medications.length);
                 return;
+            }
+            
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment(`daily_medication_item_${currentIndex + 1}`);
             }
             
             const med = medications[currentIndex];
@@ -259,13 +270,24 @@ class ModuleCDaily {
     }
 
     runScenario(container, taskType, scenarios) {
+        if (window.adCareApp && window.adCareApp.mediaRecorder) {
+            window.adCareApp.mediaRecorder.startTaskRecording(`daily_${taskType}`, 'daily');
+        }
+        
         let currentIndex = 0;
         let correctCount = 0;
         
         const showScenario = () => {
             if (currentIndex >= scenarios.length) {
+                if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                    window.adCareApp.mediaRecorder.stopTaskRecording();
+                }
                 this.showDailyResults(container, taskType, correctCount, scenarios.length);
                 return;
+            }
+            
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment(`daily_${taskType}_item_${currentIndex + 1}`);
             }
             
             const scenario = scenarios[currentIndex];

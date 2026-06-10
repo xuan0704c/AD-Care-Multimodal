@@ -50,6 +50,10 @@ class ModuleACognitive {
     }
 
     startMemoryTest(container) {
+        if (window.adCareApp && window.adCareApp.mediaRecorder) {
+            window.adCareApp.mediaRecorder.startTaskRecording('memory_test', 'cognitive');
+        }
+        
         const generateRandomSequence = (length) => {
             const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
             const sequence = [];
@@ -73,8 +77,15 @@ class ModuleACognitive {
         
         const runLevel = () => {
             if (currentLevel >= sequences.length) {
+                if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                    window.adCareApp.mediaRecorder.stopTaskRecording();
+                }
                 this.showMemoryResults(container);
                 return;
+            }
+            
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment(`memory_level_${currentLevel + 1}`);
             }
             
             container.innerHTML = '';
