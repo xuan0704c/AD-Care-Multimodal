@@ -1,0 +1,41 @@
+====================================================
+Update Log 2026-06-10-006
+====================================================
+
+1. 评估系统新增身份确认环节
+   - 进入评估系统后，loading 动画结束后先显示身份确认界面
+   - 而非直接进入 preparation（知情同意/设备检测）流程
+
+2. 新增 index.html #identity-screen 界面
+   - 标题：确认评估对象
+   - 已预选患者展示：若从患者列表/工作台传入患者ID，显示患者卡片
+     （包含头像、姓名、年龄性别、房间号）
+     提供"确认并开始"和"选择其他患者"按钮
+   - 患者列表选择：支持搜索患者姓名，点击列表项选中患者
+     提供"匿名评估"选项（不关联患者直接进入）
+   - 若未传入患者ID，默认显示患者列表供选择
+
+3. 新增 css/style.css 身份确认样式
+   - #identity-screen 布局与 preparation-screen 保持一致
+   - .identity-container / .identity-header 标题区
+   - .identity-patient-card 预选患者卡片（蓝色边框高亮）
+   - .identity-patient-list / .identity-patient-item 列表项（hover 效果）
+   - .identity-search-input 搜索框
+   - .btn-text 匿名评估文字按钮样式
+
+4. 修改 index.html ADCareApp 逻辑
+   - init()：未准备完成时，loading 结束后调用 showIdentityScreen()
+   - bindEvents()：绑定身份确认界面所有按钮事件
+   - showIdentityScreen()：根据 currentPatientId 决定显示预选或列表
+   - showIdentityPreselected() / showIdentityList() 切换视图
+   - renderIdentityList() / filterIdentityList() 渲染与搜索
+   - selectPatient()：点击列表项设置 currentPatientId
+   - confirmIdentity()：确认后将患者信息写入 sessionManager，再进入 preparation
+   - anonymousAssessment()：清除 currentPatientId，匿名进入 preparation
+
+5. 数据流转
+   门户点击"开始评估" -> 患者ID存入 sessionStorage
+   -> 进入评估系统 -> loading 结束 -> 身份确认界面
+   -> 用户确认/选择/匿名 -> 患者信息写入 sessionManager
+   -> 进入 preparation -> 知情同意 -> 设备检测 -> 指导说明 -> 开始评估
+====================================================

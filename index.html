@@ -31,6 +31,47 @@
             </div>
         </div>
 
+        <!-- 身份确认界面 -->
+        <div id="identity-screen" class="screen">
+            <div class="identity-container">
+                <div class="identity-header">
+                    <h2>确认评估对象</h2>
+                    <p>请选择或确认当前需要进行评估的患者</p>
+                </div>
+
+                <!-- 已预选患者展示 -->
+                <div id="identity-preselected" class="identity-section" style="display:none;">
+                    <div class="identity-patient-card" id="preselected-card">
+                        <!-- 动态填充 -->
+                    </div>
+                    <div class="identity-actions">
+                        <button id="btn-confirm-identity" class="btn btn-primary btn-large">确认并开始</button>
+                        <button id="btn-change-patient" class="btn btn-secondary btn-large">选择其他患者</button>
+                    </div>
+                </div>
+
+                <!-- 患者列表选择 -->
+                <div id="identity-list" class="identity-section" style="display:none;">
+                    <div class="identity-search">
+                        <input type="text" id="identity-search-input" placeholder="搜索患者姓名..." class="identity-search-input">
+                    </div>
+                    <div class="identity-filters">
+                        <button class="identity-filter-btn active" data-filter="all" onclick="window.adCareApp.filterIdentityByTime('all')">全部</button>
+                        <button class="identity-filter-btn" data-filter="month" onclick="window.adCareApp.filterIdentityByTime('month')">一个月内</button>
+                        <button class="identity-filter-btn" data-filter="week" onclick="window.adCareApp.filterIdentityByTime('week')">一周内</button>
+                        <button class="identity-filter-btn" data-filter="today" onclick="window.adCareApp.filterIdentityByTime('today')">今天</button>
+                    </div>
+                    <div class="identity-patient-list" id="identity-patient-list">
+                        <!-- 动态填充 -->
+                    </div>
+                    <div class="identity-actions">
+                        <button id="btn-anonymous" class="btn btn-text">匿名评估（暂不关联患者）</button>
+                        <button id="btn-back-preselected" class="btn btn-secondary" style="display:none;">返回</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="preparation-screen" class="screen">
             <div class="preparation-container">
                 <div class="step-indicator">
@@ -380,15 +421,19 @@
                 this.isRecording = false;
                 this.recordingStartTime = 0;
                 this.recordingInterval = null;
-                
+
                 // 进度跟踪
                 this.completedTasks = new Set();
                 this.totalTasks = 12; // 3个模块 × 每个模块4个任务
-                
+
                 // 多模态采集全局管理
                 this.multimodalCollector = null;
                 this.multimodalContainer = null;
-                
+
+                // 身份确认界面筛选状态
+                this.identityTimeFilter = 'all';
+                this.identitySearchKeyword = '';
+
                 this.init();
             }
 
@@ -397,8 +442,7 @@
                 const prepCompleted = sessionStorage.getItem('preparationCompleted') === 'true';
                 if (!prepCompleted) {
                     await this.showLoading();
-                    await this.initSystem();
-                    this.showScreen('preparation');
+                    this.showIdentityScreen();
                 } else {
                     await this.initSystem();
                     this.showScreen('assessment');
@@ -411,6 +455,13 @@
             }
 
             bindEvents() {
+                // 身份确认界面
+                document.getElementById('btn-confirm-identity').addEventListener('click', () => this.confirmIdentity());
+                document.getElementById('btn-change-patient').addEventListener('click', () => this.showIdentityList());
+                document.getElementById('btn-anonymous').addEventListener('click', () => this.anonymousAssessment());
+                document.getElementById('btn-back-preselected').addEventListener('click', () => this.showIdentityPreselected());
+                document.getElementById('identity-search-input').addEventListener('input', (e) => this.filterIdentityList(e.target.value));
+
                 document.getElementById('btn-consent').addEventListener('click', () => this.handleConsent());
                 document.getElementById('btn-decline').addEventListener('click', () => this.handleDecline());
                 document.getElementById('btn-device-ok').addEventListener('click', () => this.nextPreparationStep());
@@ -464,6 +515,22 @@
             async initSystem() {
                 await this.sessionManager.init();
                 await this.dataLogger.init();
+
+                // 关联当前患者信息（从门户页面传入）
+                const currentPatientId = sessionStorage.getItem('currentPatientId');
+                if (currentPatientId) {
+                    try {
+                        const patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                        const patient = patients.find(p => String(p.id) === currentPatientId);
+                        if (patient) {
+                            this.sessionManager.setPatientInfo(patient.id, patient.name, patient.age, patient.gender);
+                            this.sessionManager.saveToStorage();
+                        }
+                    } catch (e) {
+                        console.warn('Load patient info failed:', e);
+                    }
+                }
+
                 document.getElementById('session-id-display').textContent = this.sessionManager.sessionId.substring(0, 8);
                 this.updateProgressDisplay();
                 
@@ -504,6 +571,225 @@
                 document.getElementById(screenId + '-screen').classList.add('active');
                 this.currentScreen = screenId;
                 this.dataLogger.logEvent('screen_change', { screen: screenId });
+            }
+
+            // ===== 身份确认界面 =====
+            showIdentityScreen() {
+                const currentPatientId = sessionStorage.getItem('currentPatientId');
+                if (currentPatientId) {
+                    this.showIdentityPreselected();
+                } else {
+                    this.showIdentityList();
+                }
+                this.showScreen('identity');
+            }
+
+            showIdentityPreselected() {
+                document.getElementById('identity-preselected').style.display = 'flex';
+                document.getElementById('identity-list').style.display = 'none';
+
+                const currentPatientId = sessionStorage.getItem('currentPatientId');
+                const card = document.getElementById('preselected-card');
+
+                if (!currentPatientId) {
+                    this.showIdentityList();
+                    return;
+                }
+
+                try {
+                    const patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                    const patient = patients.find(p => String(p.id) === currentPatientId);
+
+                    if (patient) {
+                        card.innerHTML = `
+                            <div class="patient-avatar">${patient.name.charAt(0)}</div>
+                            <div class="patient-name">${patient.name}</div>
+                            <div class="patient-info">${patient.age}岁 · ${patient.gender}</div>
+                            <div class="patient-room">${patient.room}</div>
+                        `;
+                    } else {
+                        card.innerHTML = `
+                            <div class="patient-avatar">?</div>
+                            <div class="patient-name">未知患者</div>
+                            <div class="patient-info">ID: ${currentPatientId}</div>
+                        `;
+                    }
+                } catch (e) {
+                    card.innerHTML = `
+                        <div class="patient-avatar">?</div>
+                        <div class="patient-name">加载失败</div>
+                        <div class="patient-info">无法读取患者信息</div>
+                    `;
+                }
+            }
+
+            showIdentityList() {
+                document.getElementById('identity-preselected').style.display = 'none';
+                document.getElementById('identity-list').style.display = 'flex';
+                document.getElementById('btn-back-preselected').style.display =
+                    sessionStorage.getItem('currentPatientId') ? 'block' : 'none';
+                this.renderIdentityList();
+            }
+
+            renderIdentityList() {
+                const container = document.getElementById('identity-patient-list');
+                container.innerHTML = '';
+
+                try {
+                    let patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                    const kw = this.identitySearchKeyword.trim().toLowerCase();
+
+                    // 搜索过滤
+                    if (kw) {
+                        patients = patients.filter(p => p.name && p.name.toLowerCase().includes(kw));
+                    }
+
+                    // 时间筛选
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    if (this.identityTimeFilter === 'today') {
+                        patients = patients.filter(p => {
+                            if (!p.regTime) return false;
+                            const d = new Date(p.regTime);
+                            return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+                        });
+                    } else if (this.identityTimeFilter === 'week') {
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        patients = patients.filter(p => {
+                            if (!p.regTime) return false;
+                            return new Date(p.regTime) >= weekAgo;
+                        });
+                    } else if (this.identityTimeFilter === 'month') {
+                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        patients = patients.filter(p => {
+                            if (!p.regTime) return false;
+                            return new Date(p.regTime) >= monthAgo;
+                        });
+                    }
+
+                    // 按注册时间倒序（最新的在前）
+                    patients.sort((a, b) => {
+                        const tA = a.regTime ? new Date(a.regTime).getTime() : 0;
+                        const tB = b.regTime ? new Date(b.regTime).getTime() : 0;
+                        return tB - tA;
+                    });
+
+                    if (patients.length === 0) {
+                        container.innerHTML = `
+                            <div style="text-align:center;padding:2rem;color:var(--text-secondary);">
+                                <p>未找到患者</p>
+                                <p style="font-size:0.75rem;margin-top:0.5rem;">请先在患者管理中添加患者信息</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    const SHOW_COUNT = 5;
+                    const hasMore = patients.length > SHOW_COUNT;
+
+                    // 渲染患者项
+                    const renderItem = (p, isHidden) => {
+                        const item = document.createElement('div');
+                        item.className = 'identity-patient-item';
+                        if (isHidden) item.classList.add('identity-patient-hidden');
+                        item.innerHTML = `
+                            <div class="item-avatar">${p.name.charAt(0)}</div>
+                            <div class="item-info">
+                                <div class="item-name">${p.name}</div>
+                                <div class="item-meta">${p.age}岁 · ${p.gender} · ${p.room}</div>
+                            </div>
+                        `;
+                        item.addEventListener('click', () => this.selectPatient(p.id));
+                        container.appendChild(item);
+                    };
+
+                    patients.forEach((p, idx) => {
+                        renderItem(p, hasMore && idx >= SHOW_COUNT);
+                    });
+
+                    // 展开/收起按钮
+                    if (hasMore) {
+                        const toggleBtn = document.createElement('button');
+                        toggleBtn.className = 'identity-toggle-btn';
+                        toggleBtn.innerHTML = `
+                            <span class="toggle-text">展开更多 (${patients.length - SHOW_COUNT})</span>
+                            <iconify-icon icon="mdi:chevron-down" width="18"></iconify-icon>
+                        `;
+                        toggleBtn.addEventListener('click', () => {
+                            const hiddenItems = container.querySelectorAll('.identity-patient-hidden');
+                            const isExpanded = toggleBtn.classList.contains('expanded');
+                            if (isExpanded) {
+                                hiddenItems.forEach(el => el.style.display = 'none');
+                                toggleBtn.classList.remove('expanded');
+                                toggleBtn.innerHTML = `
+                                    <span class="toggle-text">展开更多 (${patients.length - SHOW_COUNT})</span>
+                                    <iconify-icon icon="mdi:chevron-down" width="18"></iconify-icon>
+                                `;
+                            } else {
+                                hiddenItems.forEach(el => el.style.display = 'flex');
+                                toggleBtn.classList.add('expanded');
+                                toggleBtn.innerHTML = `
+                                    <span class="toggle-text">收起</span>
+                                    <iconify-icon icon="mdi:chevron-up" width="18"></iconify-icon>
+                                `;
+                            }
+                        });
+                        container.appendChild(toggleBtn);
+                    }
+                } catch (e) {
+                    container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-secondary);">加载患者列表失败</div>`;
+                }
+            }
+
+            filterIdentityList(keyword) {
+                this.identitySearchKeyword = keyword;
+                this.renderIdentityList();
+            }
+
+            filterIdentityByTime(filter) {
+                this.identityTimeFilter = filter;
+
+                // 更新按钮样式
+                document.querySelectorAll('.identity-filter-btn').forEach(btn => {
+                    if (btn.dataset.filter === filter) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                this.renderIdentityList();
+            }
+
+            selectPatient(patientId) {
+                sessionStorage.setItem('currentPatientId', String(patientId));
+                this.showIdentityPreselected();
+            }
+
+            async confirmIdentity() {
+                const currentPatientId = sessionStorage.getItem('currentPatientId');
+                if (currentPatientId) {
+                    try {
+                        const patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                        const patient = patients.find(p => String(p.id) === currentPatientId);
+                        if (patient) {
+                            this.sessionManager.setPatientInfo(patient.id, patient.name, patient.age, patient.gender);
+                            this.sessionManager.saveToStorage();
+                            this.dataLogger.logEvent('identity_confirmed', { patientId: patient.id, patientName: patient.name });
+                        }
+                    } catch (e) {
+                        console.warn('Confirm identity failed:', e);
+                    }
+                }
+                await this.initSystem();
+                this.showScreen('preparation');
+            }
+
+            async anonymousAssessment() {
+                sessionStorage.removeItem('currentPatientId');
+                this.dataLogger.logEvent('identity_anonymous', {});
+                await this.initSystem();
+                this.showScreen('preparation');
             }
 
             handleConsent() {
@@ -731,6 +1017,31 @@
                 document.getElementById('total-time').textContent = `${minutes}分${seconds}秒`;
                 document.getElementById('task-count').textContent = '12';
                 document.getElementById('data-size').textContent = '待计算';
+
+                // 更新患者列表中的状态
+                this.updatePatientStatusAfterAssessment();
+            }
+
+            updatePatientStatusAfterAssessment() {
+                const patientId = sessionStorage.getItem('currentPatientId');
+                if (!patientId) return;
+
+                try {
+                    const patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                    const patient = patients.find(p => String(p.id) === patientId);
+                    if (!patient) return;
+
+                    const now = new Date();
+                    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                    patient.lastCheck = today;
+                    patient.status = 'reporting';
+
+                    localStorage.setItem('portal_patients', JSON.stringify(patients));
+                    this.dataLogger.logEvent('patient_status_updated', { patientId, lastCheck: today, status: patient.status });
+                } catch (e) {
+                    console.warn('Update patient status failed:', e);
+                }
             }
 
             async exportData() {
@@ -749,7 +1060,7 @@
                     this.mediaRecorder.clearData();
                     sessionStorage.removeItem('preparationCompleted');
                     alert('数据已删除。感谢您的参与。');
-                    location.reload();
+                    window.location.href = 'portal/dashboard.html';
                 }
             }
 

@@ -1,0 +1,26 @@
+====================================================
+Update Log 2026-06-10-008
+====================================================
+
+1. 身份确认界面患者列表新增时间筛选
+   - 新增筛选按钮栏：全部 / 一个月内 / 一周内 / 今天
+   - 按患者注册时间（regTime）进行过滤
+   - 默认选中"全部"
+   - 筛选按钮点击后高亮显示，列表实时刷新
+
+2. 修改 index.html
+   - identity-list 区域新增 .identity-filters 按钮栏（4个筛选按钮）
+   - ADCareApp constructor 新增 identityTimeFilter、identitySearchKeyword 状态
+   - renderIdentityList() 重构为无参数，读取实例状态进行过滤与渲染
+   - 新增 filterIdentityByTime(filter) 方法：处理时间筛选逻辑并更新按钮样式
+   - 时间筛选逻辑：
+     · today — 注册日期等于今天
+     · week  — 注册时间在7天内
+     · month — 注册时间在30天内
+     · all   — 不过滤
+
+3. 修改 css/style.css
+   - 新增 .identity-filters 容器（flex 布局，自动换行）
+   - 新增 .identity-filter-btn 按钮样式（圆角、hover 效果）
+   - 新增 .identity-filter-btn.active 激活状态（蓝色背景白字）
+====================================================

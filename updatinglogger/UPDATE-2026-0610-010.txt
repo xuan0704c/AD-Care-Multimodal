@@ -1,0 +1,23 @@
+====================================================
+Update Log 2026-06-10-010
+====================================================
+
+1. 评估结束后自动更新患者状态
+   - 在 updateResultSummary() 中调用 updatePatientStatusAfterAssessment()
+   - 只要评估结束（暂停退出、正常完成、删除数据并退出等），患者状态均会更新
+
+2. 修改 index.html
+   - 新增 updatePatientStatusAfterAssessment() 方法：
+     · 读取 sessionStorage.currentPatientId 获取当前评估患者
+     · 从 portal_patients 中查找对应患者
+     · 更新 lastCheck 为当前日期（YYYY-MM-DD）
+     · 若原状态为 pending（待筛查），自动更新为 review（待复查）
+     · 保存回 localStorage
+     · 记录 dataLogger 事件
+   - 评估数据删除（deleteAndExit）不影响 portal_patients 中的患者状态
+
+3. 状态流转说明
+   - 患者新增时默认状态：pending（待筛查）
+   - 完成一次评估后：lastCheck 更新为今日，pending -> review（待复查）
+   - 患者管理页面和报告查询页面均会读取更新后的状态
+====================================================

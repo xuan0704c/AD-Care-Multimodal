@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>报告查询 - 智慧忆护</title>
+    <script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+    <script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+    <style>
+        body { background-color: #f8fafc; }
+        .app-container {
+            width: 375px;
+            height: 812px;
+            background: #f8fafc;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+        }
+        .scroll-container::-webkit-scrollbar { display: none; }
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-height: 85%;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            overflow-y: auto;
+        }
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+        .report-card {
+            transition: all 0.2s ease;
+        }
+        .report-card:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="app-container flex flex-col">
+        <!-- 顶部状态栏 -->
+        <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs font-bold bg-white">
+            <span id="clock">09:41</span>
+            <div class="flex gap-1">
+                <iconify-icon class="text-gray-800" icon="mdi:signal"></iconify-icon>
+                <iconify-icon class="text-gray-800" icon="mdi:wifi"></iconify-icon>
+                <iconify-icon class="text-gray-800" icon="mdi:battery"></iconify-icon>
+            </div>
+        </div>
+
+        <!-- 顶部导航 -->
+        <div class="px-5 py-4 bg-white shadow-sm flex items-center justify-between">
+            <h1 class="text-xl font-bold text-gray-800">报告查询</h1>
+            <div class="flex gap-4 text-gray-600">
+                <iconify-icon class="relative" icon="mdi:bell-outline" width="24">
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                </iconify-icon>
+            </div>
+        </div>
+
+        <!-- 搜索栏 -->
+        <div class="px-4 py-3 bg-white">
+            <div class="relative">
+                <iconify-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" icon="mdi:magnify" width="20"></iconify-icon>
+                <input type="text" id="search-input" placeholder="搜索患者姓名或报告编号" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+        </div>
+
+        <!-- 筛选Tab -->
+        <div class="px-4 flex gap-4 text-sm font-medium border-b border-gray-100 bg-white">
+            <button class="pb-2 border-b-2 border-blue-600 text-blue-600" id="tab-all" onclick="filterReports('all')">全部</button>
+            <button class="pb-2 text-gray-500" id="tab-today" onclick="filterReports('today')">今日</button>
+            <button class="pb-2 text-gray-500" id="tab-week" onclick="filterReports('week')">本周</button>
+            <button class="pb-2 text-gray-500" id="tab-month" onclick="filterReports('month')">本月</button>
+        </div>
+
+        <!-- 统计看板 -->
+        <div class="p-4 grid grid-cols-3 gap-3">
+            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                <p class="text-[10px] text-blue-600 font-medium mb-1">报告总数</p>
+                <p class="text-xl font-bold text-blue-900" id="total-reports">0</p>
+            </div>
+            <div class="bg-green-50 p-3 rounded-xl border border-green-100">
+                <p class="text-[10px] text-green-600 font-medium mb-1">今日新增</p>
+                <p class="text-xl font-bold text-green-900" id="today-reports">0</p>
+            </div>
+            <div class="bg-purple-50 p-3 rounded-xl border border-purple-100">
+                <p class="text-[10px] text-purple-600 font-medium mb-1">平均时长</p>
+                <p class="text-xl font-bold text-purple-900" id="avg-duration">0分</p>
+            </div>
+        </div>
+
+        <!-- 报告列表 -->
+        <div class="flex-1 overflow-y-auto scroll-container p-4 space-y-3 pb-24" id="report-list">
+            <!-- 动态渲染 -->
+        </div>
+
+        <!-- 底部导航栏 -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white h-20 border-t border-gray-100 flex items-center justify-around pb-4">
+            <a href="dashboard.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                <iconify-icon icon="mdi:home" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1">工作台</span>
+            </a>
+            <a href="patients.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                <iconify-icon icon="mdi:account-group" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1">患者列表</span>
+            </a>
+            <div class="flex flex-col items-center text-blue-600">
+                <iconify-icon icon="mdi:file-chart" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1 font-bold">报告查询</span>
+            </div>
+            <button id="logout-btn" class="flex flex-col items-center text-gray-400 hover:text-red-500 transition-colors">
+                <iconify-icon icon="mdi:logout" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1">退出</span>
+            </button>
+        </div>
+
+        <!-- 报告详情模态框 -->
+        <div class="modal-overlay" id="detail-modal">
+            <div class="modal-content" id="detail-content">
+                <!-- 动态填充 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 登录状态检查
+        if (sessionStorage.getItem('portal_logged_in') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // 更新时间和日期
+        function updateDateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}`;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // 退出登录
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            sessionStorage.removeItem('portal_logged_in');
+            window.location.href = 'login.html';
+        });
+
+        // ===== 报告数据管理 =====
+        const SESSION_PREFIX = 'adcare_session_';
+        const PATIENTS_KEY = 'portal_patients';
+        const ARCHIVED_KEY = 'adcare_archived_reports';
+        let currentFilter = 'all';
+        let searchKeyword = '';
+
+        function loadPatients() {
+            const stored = localStorage.getItem(PATIENTS_KEY);
+            if (stored) {
+                return JSON.parse(stored);
+            }
+            return [];
+        }
+
+        function loadReports() {
+            const reports = [];
+            const patients = loadPatients();
+            const patientMap = {};
+            patients.forEach(p => { patientMap[p.id] = p; });
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(SESSION_PREFIX)) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        const patient = data.patientId ? patientMap[data.patientId] : null;
+                        reports.push({
+                            sessionId: data.sessionId || key.replace(SESSION_PREFIX, ''),
+                            patientId: data.patientId || null,
+                            patientName: patient ? patient.name : (data.patientName || '未知患者'),
+                            patientAge: patient ? patient.age : (data.patientAge || '--'),
+                            patientGender: patient ? patient.gender : (data.patientGender || '--'),
+                            startTime: data.startTime,
+                            endTime: data.endTime,
+                            duration: data.startTime && data.endTime ? Math.floor((data.endTime - data.startTime) / 1000) : 0,
+                            deviceInfo: data.deviceInfo || {},
+                            status: data.endTime ? 'completed' : 'incomplete',
+                            exportTime: data.exportTime || null
+                        });
+                    } catch (e) {
+                        console.warn('Parse session failed:', key);
+                    }
+                }
+            }
+
+            // 按时间倒序
+            return reports.sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return '--';
+            const d = new Date(timestamp);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '--';
+            const d = new Date(timestamp);
+            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds || seconds <= 0) return '0分';
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            if (m > 0) {
+                return `${m}分${s > 0 ? s + '秒' : ''}`;
+            }
+            return `${s}秒`;
+        }
+
+        function isToday(timestamp) {
+            if (!timestamp) return false;
+            const d = new Date(timestamp);
+            const now = new Date();
+            return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+        }
+
+        function isThisWeek(timestamp) {
+            if (!timestamp) return false;
+            const d = new Date(timestamp);
+            const now = new Date();
+            const dayDiff = (now - d) / (1000 * 60 * 60 * 24);
+            return dayDiff >= 0 && dayDiff <= 7;
+        }
+
+        function isThisMonth(timestamp) {
+            if (!timestamp) return false;
+            const d = new Date(timestamp);
+            const now = new Date();
+            return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }
+
+        function getStatusConfig(status) {
+            const configs = {
+                completed: { label: '已完成', bg: 'bg-green-100', text: 'text-green-600', icon: 'mdi:check-circle' },
+                incomplete: { label: '未完成', bg: 'bg-yellow-100', text: 'text-yellow-600', icon: 'mdi:alert-circle' }
+            };
+            return configs[status] || configs.incomplete;
+        }
+
+        function isArchived(sessionId) {
+            try {
+                const list = JSON.parse(localStorage.getItem(ARCHIVED_KEY) || '[]');
+                return list.includes(sessionId);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function getFilteredReports() {
+            let reports = loadReports();
+
+            // 搜索过滤
+            if (searchKeyword.trim()) {
+                const kw = searchKeyword.trim().toLowerCase();
+                reports = reports.filter(r =>
+                    (r.patientName && r.patientName.toLowerCase().includes(kw)) ||
+                    (r.sessionId && r.sessionId.toLowerCase().includes(kw))
+                );
+            }
+
+            // 时间筛选
+            if (currentFilter === 'today') {
+                reports = reports.filter(r => isToday(r.startTime));
+            } else if (currentFilter === 'week') {
+                reports = reports.filter(r => isThisWeek(r.startTime));
+            } else if (currentFilter === 'month') {
+                reports = reports.filter(r => isThisMonth(r.startTime));
+            }
+
+            return reports;
+        }
+
+        function updateStats(reports) {
+            document.getElementById('total-reports').textContent = reports.length;
+            document.getElementById('today-reports').textContent = reports.filter(r => isToday(r.startTime)).length;
+
+            const totalDuration = reports.reduce((sum, r) => sum + (r.duration || 0), 0);
+            const avg = reports.length > 0 ? Math.floor(totalDuration / reports.length) : 0;
+            document.getElementById('avg-duration').textContent = formatDuration(avg);
+        }
+
+        function renderReports() {
+            const reports = getFilteredReports();
+            const container = document.getElementById('report-list');
+            container.innerHTML = '';
+
+            updateStats(reports);
+
+            // 更新Tab计数
+            const allReports = loadReports();
+            document.getElementById('tab-all').textContent = `全部 (${allReports.length})`;
+            document.getElementById('tab-today').textContent = `今日 (${allReports.filter(r => isToday(r.startTime)).length})`;
+            document.getElementById('tab-week').textContent = `本周 (${allReports.filter(r => isThisWeek(r.startTime)).length})`;
+            document.getElementById('tab-month').textContent = `本月 (${allReports.filter(r => isThisMonth(r.startTime)).length})`;
+
+            if (reports.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-400">
+                        <iconify-icon icon="mdi:file-document-outline" width="48" class="mx-auto mb-2 opacity-50"></iconify-icon>
+                        <p class="text-sm">暂无符合条件的报告</p>
+                        <p class="text-xs mt-1">完成评估后将自动生成报告</p>
+                    </div>
+                `;
+                return;
+            }
+
+            reports.forEach(r => {
+                const cfg = getStatusConfig(r.status);
+                const dateStr = formatDate(r.startTime);
+                const timeStr = formatTime(r.startTime);
+                const durationStr = formatDuration(r.duration);
+
+                const archived = isArchived(r.sessionId);
+                const card = document.createElement('div');
+                card.className = 'report-card bg-white p-4 rounded-2xl shadow-sm border border-gray-100 cursor-pointer';
+                card.onclick = () => {
+                    window.location.href = 'report-detail.html?sessionId=' + r.sessionId;
+                };
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm">
+                                ${r.patientName.charAt(0)}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-sm">${r.patientName}</h3>
+                                <p class="text-[10px] text-gray-400">${r.patientAge}岁 · ${r.patientGender}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="${cfg.bg} ${cfg.text} px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                                <iconify-icon icon="${cfg.icon}" width="12"></iconify-icon>
+                                ${cfg.label}
+                            </span>
+                            ${archived ? `<span class="bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"><iconify-icon icon="mdi:archive" width="12"></iconify-icon>已存档</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-500 mt-3 pt-3 border-t border-gray-50">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1">
+                                <iconify-icon icon="mdi:calendar" width="14"></iconify-icon>
+                                ${dateStr}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <iconify-icon icon="mdi:clock-outline" width="14"></iconify-icon>
+                                ${timeStr}
+                            </span>
+                        </div>
+                        <span class="flex items-center gap-1">
+                            <iconify-icon icon="mdi:timer-outline" width="14"></iconify-icon>
+                            ${durationStr}
+                        </span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterReports(type) {
+            currentFilter = type;
+            ['all', 'today', 'week', 'month'].forEach(t => {
+                const tab = document.getElementById(`tab-${t}`);
+                if (t === type) {
+                    tab.className = 'pb-2 border-b-2 border-blue-600 text-blue-600';
+                } else {
+                    tab.className = 'pb-2 text-gray-500';
+                }
+            });
+            renderReports();
+        }
+
+        // 搜索
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            searchKeyword = e.target.value;
+            renderReports();
+        });
+
+        // 报告详情
+        function openDetail(report) {
+            const cfg = getStatusConfig(report.status);
+            const modal = document.getElementById('detail-modal');
+            const content = document.getElementById('detail-content');
+
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-bold text-gray-800">评估报告详情</h2>
+                    <button onclick="closeDetail()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                        <iconify-icon icon="mdi:close" width="20"></iconify-icon>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
+                        ${report.patientName.charAt(0)}
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">${report.patientName}</h3>
+                        <p class="text-xs text-gray-500">${report.patientAge}岁 · ${report.patientGender}</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-gray-50 p-4 rounded-xl">
+                        <p class="text-xs text-gray-400 mb-1">报告编号</p>
+                        <p class="text-sm font-mono font-medium text-gray-700">${report.sessionId}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-xs text-gray-400 mb-1">评估日期</p>
+                            <p class="text-sm font-medium text-gray-700">${formatDate(report.startTime)}</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-xs text-gray-400 mb-1">开始时间</p>
+                            <p class="text-sm font-medium text-gray-700">${formatTime(report.startTime)}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-xs text-gray-400 mb-1">评估时长</p>
+                            <p class="text-sm font-medium text-gray-700">${formatDuration(report.duration)}</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-xs text-gray-400 mb-1">报告状态</p>
+                            <p class="text-sm font-medium ${cfg.text}">${cfg.label}</p>
+                        </div>
+                    </div>
+
+                    ${report.deviceInfo && report.deviceInfo.platform ? `
+                    <div class="bg-gray-50 p-4 rounded-xl">
+                        <p class="text-xs text-gray-400 mb-2">设备信息</p>
+                        <div class="space-y-1 text-xs text-gray-600">
+                            <p>平台：${report.deviceInfo.platform || '--'}</p>
+                            <p>屏幕：${report.deviceInfo.screenWidth || '--'} x ${report.deviceInfo.screenHeight || '--'}</p>
+                            <p>语言：${report.deviceInfo.language || '--'}</p>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="pt-2">
+                        <button onclick="closeDetail()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeDetail() {
+            document.getElementById('detail-modal').classList.remove('active');
+        }
+
+        // 点击遮罩关闭
+        document.getElementById('detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeDetail();
+        });
+
+        // 初始化渲染
+        renderReports();
+    </script>
+</body>
+</html>

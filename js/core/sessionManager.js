@@ -6,6 +6,10 @@ class SessionManager {
         this.deviceInfo = {};
         this.startTime = null;
         this.endTime = null;
+        this.patientId = null;
+        this.patientName = null;
+        this.patientAge = null;
+        this.patientGender = null;
     }
 
     generateSessionId() {
@@ -44,6 +48,13 @@ class SessionManager {
         this.consentTime = timestamp;
     }
 
+    setPatientInfo(id, name, age, gender) {
+        this.patientId = id || null;
+        this.patientName = name || null;
+        this.patientAge = age || null;
+        this.patientGender = gender || null;
+    }
+
     getMetadata() {
         return {
             sessionId: this.sessionId,
@@ -52,6 +63,10 @@ class SessionManager {
             startTime: this.startTime,
             endTime: this.endTime,
             deviceInfo: this.deviceInfo,
+            patientId: this.patientId,
+            patientName: this.patientName,
+            patientAge: this.patientAge,
+            patientGender: this.patientGender,
             version: '1.0.0'
         };
     }

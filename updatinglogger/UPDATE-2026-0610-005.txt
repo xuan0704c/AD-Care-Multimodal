@@ -1,0 +1,40 @@
+====================================================
+Update Log 2026-06-10-005
+====================================================
+
+1. 新增 portal/report.html 报告查询页面
+   - 顶部搜索栏：支持按患者姓名或报告编号搜索
+   - 筛选标签：全部 / 今日 / 本周 / 本月，带实时计数
+   - 统计看板：报告总数、今日新增、平均评估时长
+   - 报告列表：动态读取 localStorage 中的 adcare_session_* 数据
+   - 报告详情模态框：展示患者信息、评估日期、时长、设备信息、状态
+   - 空状态提示：无报告时显示引导
+   - 底部导航栏：与工作台、患者列表、退出统一风格
+
+2. 修改 js/core/sessionManager.js
+   - constructor 中新增 patientId、patientName、patientAge、patientGender 字段
+   - 新增 setPatientInfo() 方法用于关联患者信息
+   - getMetadata() 返回数据中包含患者信息字段
+
+3. 修改 index.html
+   - initSystem() 中读取 sessionStorage.currentPatientId
+   - 自动从 portal_patients 中查找对应患者并写入 sessionManager
+   - 实现评估数据与患者的自动关联
+
+4. 修改 portal/patients.html
+   - enterAssessment() 增加 patientId 参数
+   - 点击患者列表中的"开始评估"按钮时传入对应患者 ID
+   - 评估完成后报告可自动关联到该患者
+
+5. 修改 portal/dashboard.html
+   - enterAssessment() 增加 patientId 参数支持
+   - "最近评估记录"改为动态渲染（读取真实 adcare_session 数据）
+   - 增加"查看全部"链接跳转 report.html
+   - 无记录时显示空状态
+
+6. 数据流转说明
+   - 患者列表 / 工作台点击"开始评估" -> 患者 ID 写入 sessionStorage
+   -> 进入评估系统 -> sessionManager 自动读取并关联患者信息
+   -> 评估数据存入 localStorage (adcare_session_*) 
+   -> 报告查询页面读取并展示带患者姓名的报告列表
+====================================================
