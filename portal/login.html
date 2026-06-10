@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>登录 - 智慧忆护阿尔茨海默病筛查系统</title>
+    <script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+    <script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+    <style>
+        body { background-color: #f0f4f8; }
+        .app-container {
+            width: 375px;
+            height: 812px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 8px solid #1e293b;
+            border-radius: 40px;
+            margin: 20px auto;
+        }
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="app-container flex flex-col">
+        <!-- 状态栏模拟 -->
+        <div class="px-6 pt-4 flex justify-between items-center text-xs font-bold">
+            <span id="clock">09:41</span>
+            <div class="flex gap-1">
+                <iconify-icon icon="mdi:signal"></iconify-icon>
+                <iconify-icon icon="mdi:wifi"></iconify-icon>
+                <iconify-icon icon="mdi:battery"></iconify-icon>
+            </div>
+        </div>
+        <div class="flex-1 px-8 pt-12">
+            <!-- Logo与标题 -->
+            <div class="flex flex-col items-center mb-12">
+                <div class="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg mb-4">
+                    <iconify-icon class="text-white text-5xl" icon="mdi:brain"></iconify-icon>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">智慧忆护</h1>
+                <p class="text-blue-600 text-sm font-medium tracking-widest mt-1">边缘端多模态智能筛查系统</p>
+                <p class="text-gray-400 text-xs mt-2 italic" id="current-date">当前日期：2026年04月04日</p>
+            </div>
+            <!-- 登录表单 -->
+            <div class="space-y-5">
+                <div class="relative">
+                    <span class="absolute left-4 top-4 text-gray-400">
+                        <iconify-icon icon="mdi:account-outline" width="20"></iconify-icon>
+                    </span>
+                    <input id="username" class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="社区医生/志愿者工号" type="text"/>
+                </div>
+                <div class="relative">
+                    <span class="absolute left-4 top-4 text-gray-400">
+                        <iconify-icon icon="mdi:lock-outline" width="20"></iconify-icon>
+                    </span>
+                    <input id="password" class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="请输入密码" type="password"/>
+                </div>
+                <div class="flex justify-between items-center text-xs text-gray-500 px-1">
+                    <label class="flex items-center gap-1">
+                        <input id="remember" class="rounded" type="checkbox"/> 记住账号
+                    </label>
+                    <a class="text-blue-600" href="#">忘记密码？</a>
+                </div>
+                <button id="login-btn" class="block w-full bg-blue-600 text-white text-center py-4 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+                    进入系统
+                </button>
+                <p id="error-msg" class="text-red-500 text-xs text-center hidden">工号或密码错误，请重试</p>
+            </div>
+            <!-- 生物识别 -->
+            <div class="mt-12 flex flex-col items-center">
+                <p class="text-gray-400 text-xs mb-4">或者使用生物识别登录</p>
+                <div class="flex gap-8">
+                    <button class="w-14 h-14 rounded-full border border-gray-100 flex items-center justify-center shadow-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                        <iconify-icon icon="mdi:face-recognition" width="28"></iconify-icon>
+                    </button>
+                    <button class="w-14 h-14 rounded-full border border-gray-100 flex items-center justify-center shadow-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                        <iconify-icon icon="mdi:fingerprint" width="28"></iconify-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- 底部版权 -->
+        <div class="p-8 text-center">
+            <p class="text-[10px] text-gray-400 uppercase tracking-widest leading-loose">
+                基于边缘计算架构 · 多模态感知技术<br/>
+                国家老年疾病临床医学研究中心 提供技术支持
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 更新时间和日期
+        function updateDateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}`;
+
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            document.getElementById('current-date').textContent = `当前日期：${year}年${month}月${day}日`;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // 记住账号功能
+        const savedUsername = localStorage.getItem('portal_username');
+        if (savedUsername) {
+            document.getElementById('username').value = savedUsername;
+            document.getElementById('remember').checked = true;
+        }
+
+        // 登录验证
+        document.getElementById('login-btn').addEventListener('click', function() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const remember = document.getElementById('remember').checked;
+            const errorMsg = document.getElementById('error-msg');
+            const appContainer = document.querySelector('.app-container');
+
+            if (!username || !password) {
+                errorMsg.textContent = '请输入工号和密码';
+                errorMsg.classList.remove('hidden');
+                appContainer.classList.add('shake');
+                setTimeout(() => appContainer.classList.remove('shake'), 500);
+                return;
+            }
+
+            // 模拟验证（实际项目中应连接后端）
+            if (username.length >= 3 && password.length >= 4) {
+                if (remember) {
+                    localStorage.setItem('portal_username', username);
+                } else {
+                    localStorage.removeItem('portal_username');
+                }
+                sessionStorage.setItem('portal_logged_in', 'true');
+                window.location.href = 'dashboard.html';
+            } else {
+                errorMsg.textContent = '工号或密码错误，请重试';
+                errorMsg.classList.remove('hidden');
+                appContainer.classList.add('shake');
+                setTimeout(() => appContainer.classList.remove('shake'), 500);
+            }
+        });
+
+        // 回车登录
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('login-btn').click();
+            }
+        });
+    </script>
+</body>
+</html>
