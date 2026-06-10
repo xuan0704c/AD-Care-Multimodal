@@ -105,10 +105,10 @@
                     <p class="text-xs text-blue-100 leading-relaxed mb-4">
                         基于面部视频、语音音频、交互行为和手写轨迹的多模态数据采集，对认知功能进行客观全面评估。
                     </p>
-                    <a href="../index.html" class="flex items-center justify-center gap-2 w-full bg-white text-blue-700 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors shadow-md">
+                    <button onclick="enterAssessment()" class="flex items-center justify-center gap-2 w-full bg-white text-blue-700 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors shadow-md">
                         <iconify-icon icon="mdi:play-circle" width="20"></iconify-icon>
                         进入评估系统
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -160,9 +160,9 @@
                                 <p class="text-[10px] text-gray-400">房号：2号楼-402 · 高风险预警</p>
                             </div>
                         </div>
-                        <a href="../index.html" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
+                        <button onclick="enterAssessment()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
                             开始评估
-                        </a>
+                        </button>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
                         <div class="flex items-center gap-3">
@@ -174,9 +174,9 @@
                                 <p class="text-[10px] text-gray-400">房号：8号楼-203 · 今日待筛查</p>
                             </div>
                         </div>
-                        <a href="../index.html" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
+                        <button onclick="enterAssessment()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
                             开始评估
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -254,6 +254,12 @@
         const savedUsername = localStorage.getItem('portal_username');
         if (savedUsername) {
             document.getElementById('welcome-name').textContent = savedUsername + '医生';
+        }
+
+        // 进入评估系统前清除准备阶段标记，确保重新经过准备流程
+        function enterAssessment() {
+            sessionStorage.removeItem('preparationCompleted');
+            window.location.href = '../index.html';
         }
 
         // 退出登录

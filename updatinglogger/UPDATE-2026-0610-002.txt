@@ -1,0 +1,35 @@
+====================================================
+Update Log - 2026-06-10
+====================================================
+
+[更新编号]: UPDATE-2026-0610-002
+[更新日期]: 2026-06-10
+[操作分支]: main
+[操作人员]: AI Assistant
+
+[更新内容]:
+- 修改文件: portal/dashboard.html
+  - 修改说明: 
+    1. 将"进入评估系统"按钮由 <a> 标签改为 <button>，通过 onclick="enterAssessment()" 跳转
+    2. 将待筛查患者列表中的"开始评估"按钮同样改为 enterAssessment() 方式跳转
+    3. 新增 enterAssessment() 函数，在跳转到 ../index.html 前先清除 sessionStorage 中的 preparationCompleted 标记
+  - 影响范围: 门户网站主页面跳转逻辑
+
+[更新原因]:
+修复从门户网站进入评估系统时，若浏览器 sessionStorage 中残留了之前测试的
+preparationCompleted 标记，会导致 index.html 直接跳过准备阶段并开始录制，
+从而提前弹出麦克风/摄像头权限请求的问题。
+现在每次从门户进入评估系统都会强制重新经过准备阶段，符合实际筛查工作流
+（每次为不同患者评估都需重新完成准备流程）。
+
+[测试结果]:
+- [x] 功能测试通过
+- [x] 跳转逻辑测试通过
+- [x] sessionStorage 清除验证通过
+- [x] 代码审查通过
+
+[备注]:
+enterAssessment() 函数在跳转前先执行 sessionStorage.removeItem('preparationCompleted')，
+确保 index.html 的 init() 中 prepCompleted 始终为 false，从而正常进入准备阶段。
+
+====================================================
