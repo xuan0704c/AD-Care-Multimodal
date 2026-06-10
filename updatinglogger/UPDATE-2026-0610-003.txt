@@ -8,23 +8,37 @@ Update Log - 2026-06-10
 [操作人员]: AI Assistant
 
 [更新内容]:
-- 修改文件: sample/management.html
+- 新增文件: portal/patients.html
   - 修改说明: 
-    1. 修复底部导航栏 HTML 结构：历史同步的 <div> 未正确闭合，导致工作台 <a> 被嵌套其中，四个按钮无法对齐
-    2. 将"工作台"改为"主页"，链接由 index.html 改为 ../portal/dashboard.html
-    3. 图标由 account-circle-outline 改为 home，更符合主页含义
-  - 影响范围: 患者管理页面底部导航栏
+    1. 基于 sample/management.html 重新梳理逻辑，创建独立的患者管理页面
+    2. 修复底部导航栏结构（4个按钮：工作台/患者列表/开始评估/退出）
+    3. 新增返回工作台（dashboard.html）的链接
+    4. 所有按钮对齐，使用 justify-around 均匀分布
+    5. 不引用 sample/ 下的任何文件，完全独立
+  - 影响范围: 门户网站患者管理模块
+
+- 修改文件: portal/dashboard.html
+  - 修改说明: 
+    1. 将快捷功能入口中的链接从 ../sample/xxx.html 改为 portal 内部页面
+    2. "查看全部"链接改为 patients.html
+    3. 底部导航栏患者列表和实时监测链接改为 portal 内部页面
+  - 影响范围: 门户网站主页链接结构
 
 [更新原因]:
-修复患者列表页面底部导航栏按钮不齐的问题，并添加返回主页的入口。
+1. 修复患者列表页面底部导航栏按钮不齐的问题（原 sample/management.html 中历史同步的 div 嵌套了工作台的 a 标签，导致结构错乱）
+2. 增加返回主页（工作台）的按钮
+3. 解除对 sample/ 文件夹的依赖，后续可直接删除 sample 文件夹
 
 [测试结果]:
 - [x] 功能测试通过
-- [x] 布局对齐检查通过
-- [x] 跳转链接测试通过
+- [x] 页面跳转测试通过
+- [x] 底部导航栏对齐检查通过
 - [x] 代码审查通过
 
 [备注]:
-底部导航栏现在包含四个独立且对齐的按钮：患者列表、边缘设备、历史同步、主页。
+门户页面现在完全独立于 sample/ 文件夹：
+- portal/login.html → portal/dashboard.html → portal/patients.html
+- 所有内部链接使用相对路径在 portal/ 目录内跳转
+- 进入 AD-Care 评估系统统一使用 enterAssessment() 函数
 
 ====================================================
