@@ -256,9 +256,18 @@
             <div class="assessment-header">
                 <div class="header-info">
                     <span class="session-id">会话: <span id="session-id-display">--</span></span>
-                    <span class="progress-text">进度: <span id="progress-display">0%</span></span>
+                    <div class="progress-bar-wrap">
+                        <span class="progress-label">进度</span>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <span class="progress-value" id="progress-display">0%</span>
+                    </div>
                 </div>
                 <div class="header-actions">
+                    <button id="btn-toggle-multimodal" class="icon-btn icon-btn-subtle" title="实时监测">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
                     <button id="btn-pause" class="icon-btn" title="暂停">
                         <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     </button>
@@ -278,54 +287,67 @@
                     <span class="module-name">情绪行为</span>
                 </div>
                 <div class="module-tab" data-module="C">
-                    <span class="module-icon">C</span>
+                    <span class="module-icon">B</span>
                     <span class="module-name">日常功能</span>
                 </div>
             </div>
 
-            <div id="assessment-content" class="assessment-content">
-                <div id="module-a-content" class="module-content active">
-                    <div class="task-selector">
-                        <button class="task-btn active" data-task="memory">记忆测试</button>
-                        <button class="task-btn" data-task="executive">执行功能</button>
-                        <button class="task-btn" data-task="language">语言测试</button>
-                        <button class="task-btn" data-task="spatial">视空间</button>
+            <div class="assessment-main">
+                <div id="assessment-content" class="assessment-content">
+                    <div id="module-a-content" class="module-content active">
+                        <div class="task-selector">
+                            <button class="task-btn active" data-task="memory">记忆测试</button>
+                            <button class="task-btn" data-task="executive">执行功能</button>
+                            <button class="task-btn" data-task="language">语言测试</button>
+                            <button class="task-btn" data-task="spatial">视空间</button>
+                        </div>
+                        <div id="task-container" class="task-container">
+                        </div>
                     </div>
-                    <div id="task-container" class="task-container">
+                    <div id="module-b-content" class="module-content">
+                        <div class="multimodal-status">
+                            <div class="status-item active" data-stream="video">
+                                <div class="status-indicator"></div>
+                                <span>视频采集</span>
+                            </div>
+                            <div class="status-item active" data-stream="audio">
+                                <div class="status-indicator"></div>
+                                <span>音频采集</span>
+                            </div>
+                            <div class="status-item" data-stream="face">
+                                <div class="status-indicator"></div>
+                                <span>面部检测</span>
+                            </div>
+                            <div class="status-item" data-stream="emotion">
+                                <div class="status-indicator"></div>
+                                <span>情绪识别</span>
+                            </div>
+                        </div>
+                        <div id="multimodal-container-mobile" class="multimodal-container">
+                        </div>
+                    </div>
+                    <div id="module-c-content" class="module-content">
+                        <div class="task-selector">
+                            <button class="task-btn active" data-task="medication">药物识别</button>
+                            <button class="task-btn" data-task="appointment">线上预约</button>
+                            <button class="task-btn" data-task="finance">财务计算</button>
+                            <button class="task-btn" data-task="route">路线规划</button>
+                            <button class="task-btn" data-task="social">社交互动</button>
+                        </div>
+                        <div id="daily-task-container" class="task-container">
+                        </div>
                     </div>
                 </div>
-                <div id="module-b-content" class="module-content">
-                    <div class="multimodal-status">
-                        <div class="status-item active" data-stream="video">
-                            <div class="status-indicator"></div>
-                            <span>视频采集</span>
-                        </div>
-                        <div class="status-item active" data-stream="audio">
-                            <div class="status-indicator"></div>
-                            <span>音频采集</span>
-                        </div>
-                        <div class="status-item" data-stream="face">
-                            <div class="status-indicator"></div>
-                            <span>面部检测</span>
-                        </div>
-                        <div class="status-item" data-stream="emotion">
-                            <div class="status-indicator"></div>
-                            <span>情绪识别</span>
+
+                <div id="b-module-panel" class="b-module-panel">
+                    <div class="b-panel-header">
+                        <span class="b-panel-title">实时多模态监测</span>
+                        <div class="b-panel-status">
+                            <span class="status-dot"></span>
+                            <span id="b-panel-status-text">初始化中</span>
                         </div>
                     </div>
-                    <div id="multimodal-container" class="multimodal-container">
-                    </div>
-                </div>
-                <div id="module-c-content" class="module-content">
-                    <div class="task-selector">
-                        <button class="task-btn active" data-task="medication">药物识别</button>
-                        <button class="task-btn" data-task="appointment">线上预约</button>
-                        <button class="task-btn" data-task="finance">财务计算</button>
-                        <button class="task-btn" data-task="route">路线规划</button>
-                        <button class="task-btn" data-task="social">社交互动</button>
-                    </div>
-                    <div id="daily-task-container" class="task-container">
-                    </div>
+                    <div id="multimodal-container" class="multimodal-container"></div>
                 </div>
             </div>
 
@@ -424,7 +446,7 @@
 
                 // 进度跟踪
                 this.completedTasks = new Set();
-                this.totalTasks = 12; // 3个模块 × 每个模块4个任务
+                this.totalTasks = 8; // A模块4个 + C模块4个任务（B模块实时监测不计入）
 
                 // 多模态采集全局管理
                 this.multimodalCollector = null;
@@ -468,6 +490,7 @@
                 document.getElementById('btn-recheck').addEventListener('click', () => this.recheckDevices());
                 document.getElementById('btn-guide-next').addEventListener('click', () => this.nextGuideSlide());
                 document.getElementById('btn-guide-prev').addEventListener('click', () => this.prevGuideSlide());
+                document.getElementById('btn-toggle-multimodal').addEventListener('click', () => this.toggleMultimodalPanel());
                 document.getElementById('btn-pause').addEventListener('click', () => this.pauseAssessment());
                 document.getElementById('btn-exit').addEventListener('click', () => this.showExitModal());
                 document.getElementById('btn-resume').addEventListener('click', () => this.resumeAssessment());
@@ -477,17 +500,16 @@
                 document.getElementById('btn-export').addEventListener('click', () => this.exportData());
                 document.getElementById('btn-delete').addEventListener('click', () => this.deleteAndExit());
 
-                document.querySelectorAll('.module-tab').forEach(tab => {
-                    tab.addEventListener('click', (e) => this.switchModule(e.currentTarget.dataset.module));
-                });
-
-                document.querySelectorAll('#module-a-content .task-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => this.switchTask('A', e.currentTarget.dataset.task));
-                });
-
-                document.querySelectorAll('#module-c-content .task-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => this.switchTask('C', e.currentTarget.dataset.task));
-                });
+                // 模块标签页和任务按钮的点击已禁用，用户必须按顺序完成任务
+                // document.querySelectorAll('.module-tab').forEach(tab => {
+                //     tab.addEventListener('click', (e) => this.switchModule(e.currentTarget.dataset.module));
+                // });
+                // document.querySelectorAll('#module-a-content .task-btn').forEach(btn => {
+                //     btn.addEventListener('click', (e) => this.switchTask('A', e.currentTarget.dataset.task));
+                // });
+                // document.querySelectorAll('#module-c-content .task-btn').forEach(btn => {
+                //     btn.addEventListener('click', (e) => this.switchTask('C', e.currentTarget.dataset.task));
+                // });
             }
 
             async showLoading() {
@@ -546,6 +568,8 @@
                 const completed = this.completedTasks.size;
                 const progress = Math.round((completed / this.totalTasks) * 100);
                 document.getElementById('progress-display').textContent = `${progress}%`;
+                const fill = document.getElementById('progress-fill');
+                if (fill) fill.style.width = `${progress}%`;
             }
 
             markTaskCompleted(module, task) {
@@ -554,7 +578,39 @@
                     this.completedTasks.add(taskKey);
                     this.updateProgressDisplay();
                     this.dataLogger.logEvent('task_completed', { module, task, completedTasks: this.completedTasks.size });
+                    
+                    // 给已完成的任务按钮添加 completed 样式
+                    const btn = document.querySelector(`#module-${module.toLowerCase()}-content .task-btn[data-task="${task}"]`);
+                    if (btn) btn.classList.add('completed');
+                    
+                    // 自动推进到下一个任务（延迟2秒让用户查看结果）
+                    this.autoAdvanceTask(module, task);
                 }
+            }
+
+            autoAdvanceTask(currentModule, currentTask) {
+                const taskOrder = {
+                    'A': ['memory', 'executive', 'language', 'spatial'],
+                    'C': ['medication', 'appointment', 'finance', 'route', 'social']
+                };
+                
+                const tasks = taskOrder[currentModule];
+                if (!tasks) return;
+                
+                const currentIndex = tasks.indexOf(currentTask);
+                if (currentIndex === -1) return;
+                
+                setTimeout(() => {
+                    if (currentIndex < tasks.length - 1) {
+                        // 同一模块的下一个任务
+                        const nextTask = tasks[currentIndex + 1];
+                        this.switchTask(currentModule, nextTask);
+                    } else if (currentModule === 'A') {
+                        // A模块最后一个任务完成，切换到C模块第一个任务
+                        this.switchModule('C');
+                        setTimeout(() => this.switchTask('C', 'medication'), 300);
+                    }
+                }, 2000);
             }
 
             markTaskIncomplete(module, task) {
@@ -902,6 +958,12 @@
                 });
 
                 this.switchTask('A', 'memory');
+
+                // 后台初始化模块B的多模态采集（不自动展开面板）
+                if (!this.multimodalCollector) {
+                    this.multimodalCollector = new ModuleBEmotional(this);
+                    this.multimodalCollector.initializeCollection();
+                }
             }
 
             startRecordingTimer() {
@@ -914,30 +976,45 @@
                 }, 1000);
             }
 
+            toggleMultimodalPanel() {
+                const bPanel = document.getElementById('b-module-panel');
+                const bContainer = document.getElementById('multimodal-container');
+                const toggleBtn = document.getElementById('btn-toggle-multimodal');
+                if (!bPanel) return;
+
+                const isActive = bPanel.classList.contains('active');
+                if (isActive) {
+                    bPanel.classList.remove('active');
+                    if (toggleBtn) toggleBtn.classList.remove('active');
+                } else {
+                    bPanel.classList.add('active');
+                    if (toggleBtn) toggleBtn.classList.add('active');
+                    // 只在容器首次为空时渲染，避免重复重建DOM导致canvas尺寸错误
+                    if (bContainer && this.multimodalCollector && bContainer.children.length === 0) {
+                        this.multimodalCollector.render(bContainer);
+                    }
+                }
+            }
+
             switchModule(module) {
                 document.querySelectorAll('.module-tab').forEach(t => t.classList.remove('active'));
                 document.querySelector(`.module-tab[data-module="${module}"]`).classList.add('active');
                 document.querySelectorAll('.module-content').forEach(c => c.classList.remove('active'));
                 document.getElementById(`module-${module.toLowerCase()}-content`).classList.add('active');
                 
-                // 如果离开情绪行为模块，暂停采集显示但继续后台收集
-                if (this.currentModule === 'B' && this.multimodalCollector) {
-                    this.multimodalCollector.pauseCollection();
-                }
-                
                 this.currentModule = module;
                 this.dataLogger.logEvent('module_switch', { module });
                 
                 if (module === 'B') {
-                    const container = document.getElementById('multimodal-container');
-                    container.innerHTML = '';
-                    // 使用全局多模态采集器，保持采集状态
-                    if (this.multimodalCollector) {
-                        this.multimodalCollector.render(container);
-                        this.multimodalCollector.resumeCollection();
-                    } else {
-                        this.multimodalCollector = new ModuleBEmotional(this);
-                        this.multimodalCollector.render(container);
+                    const container = document.getElementById('multimodal-container-mobile');
+                    if (container) {
+                        container.innerHTML = '';
+                        if (this.multimodalCollector) {
+                            this.multimodalCollector.render(container);
+                        } else {
+                            this.multimodalCollector = new ModuleBEmotional(this);
+                            this.multimodalCollector.render(container);
+                        }
                     }
                 } else if (module === 'C') {
                     this.switchTask('C', 'medication');
@@ -1015,8 +1092,13 @@
                 const minutes = Math.floor(duration / 60);
                 const seconds = duration % 60;
                 document.getElementById('total-time').textContent = `${minutes}分${seconds}秒`;
-                document.getElementById('task-count').textContent = '12';
-                document.getElementById('data-size').textContent = '待计算';
+                // 只统计 A 和 C 模块的已完成任务数
+                const relevantCompleted = Array.from(this.completedTasks).filter(key => {
+                    const module = key.split('-')[0];
+                    return module === 'A' || module === 'C';
+                }).length;
+                document.getElementById('task-count').textContent = `${relevantCompleted} / ${this.totalTasks}`;
+                document.getElementById('data-size').textContent = this.dataLogger.getDataSize();
 
                 // 更新患者列表中的状态
                 this.updatePatientStatusAfterAssessment();

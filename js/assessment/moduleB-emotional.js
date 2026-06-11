@@ -109,27 +109,8 @@ class ModuleBEmotional {
         this.currentContainer = container;
         container.innerHTML = '';
         
-        const header = UIComponents.createTaskHeader(
-            '情绪行为评估',
-            '多模态情绪数据采集与分析'
-        );
-        container.appendChild(header);
-        
-        const instruction = UIComponents.createInstructionBox(
-            '系统将同时采集您的面部表情、语音特征和身体姿态数据。请保持自然状态，正常完成任务即可。'
-        );
-        container.appendChild(instruction);
-        
-        if (!this.hasStartedCollection) {
-            const startBtn = document.createElement('button');
-            startBtn.className = 'start-task-btn';
-            startBtn.textContent = '开始多模态采集';
-            startBtn.addEventListener('click', () => this.startMultimodalCollection(container));
-            container.appendChild(startBtn);
-        } else {
-            // 已开始采集，直接显示采集界面
-            this.startMultimodalCollection(container);
-        }
+        // 直接显示采集界面，无需点击按钮
+        this.startMultimodalCollection(container);
     }
 
     async startMultimodalCollection(container) {
@@ -204,27 +185,6 @@ class ModuleBEmotional {
         waveformContainer.appendChild(waveformCanvas);
         layout.appendChild(waveformContainer);
         this.waveformCanvas = waveformCanvas;
-        
-        // Recording button
-        const recBtn = document.createElement('button');
-        recBtn.className = 'recording-btn';
-        recBtn.innerHTML = `
-            <svg viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="6"/>
-            </svg>
-        `;
-        recBtn.classList.add('recording');
-        recBtn.addEventListener('click', () => {
-            if (recBtn.classList.contains('recording')) {
-                this.stopCollection();
-                recBtn.classList.remove('recording');
-                this.showResults(container);
-            } else {
-                recBtn.classList.add('recording');
-            }
-        });
-        layout.appendChild(recBtn);
-        this.recBtn = recBtn;
         
         container.appendChild(layout);
         

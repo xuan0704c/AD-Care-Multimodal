@@ -21,6 +21,7 @@
 
 .header-info {
     display: flex;
+    align-items: center;
     gap: 1rem;
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -31,10 +32,50 @@
     background: var(--background);
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
+    flex-shrink: 0;
+}
+
+/* Progress Bar */
+.progress-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 140px;
+}
+
+.progress-label {
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 80px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.progress-value {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 32px;
+    text-align: right;
 }
 
 .header-actions {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
 }
 
@@ -53,15 +94,27 @@
     justify-content: center;
     gap: 0.375rem;
     padding: 0.75rem 0.5rem;
-    cursor: pointer;
+    cursor: default;
     border-bottom: 2px solid transparent;
     transition: all 0.2s ease;
-    opacity: 0.6;
+    opacity: 0.4;
+    pointer-events: none;
 }
 
 .module-tab.active {
     border-bottom-color: var(--primary);
     opacity: 1;
+    font-weight: 600;
+}
+
+/* 手机端隐藏B模块标签页 */
+.module-tab[data-module="B"] {
+    display: none;
+}
+
+/* 手机端隐藏B模块内容 */
+#module-b-content {
+    display: none !important;
 }
 
 .module-icon {
@@ -84,6 +137,19 @@
 .module-name {
     font-size: 0.8125rem;
     font-weight: 600;
+}
+
+/* Assessment Main Layout */
+.assessment-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* B Module Panel - hidden on mobile by default */
+.b-module-panel {
+    display: none;
 }
 
 /* Assessment Content */
@@ -114,24 +180,30 @@
 .task-btn {
     flex-shrink: 0;
     padding: 0.5rem 1rem;
-    border: 2px solid #808080;
+    border: 2px solid var(--border);
     border-radius: 20px;
     background: #ffffff;
     font-size: 0.8125rem;
-    cursor: pointer;
+    cursor: default;
     transition: all 0.2s ease;
     white-space: nowrap;
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 .task-btn.active {
     background: var(--primary);
     color: white;
     border-color: var(--primary);
+    opacity: 1;
+    font-weight: 600;
 }
 
-.task-btn:hover:not(.active) {
-    border-color: var(--primary);
-    color: var(--primary);
+.task-btn.completed {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+    opacity: 0.7;
 }
 
 /* Task Container */
