@@ -35,6 +35,8 @@ class ModuleCDaily {
     }
 
     renderMedicationTask(container) {
+        container.innerHTML = '';
+        
         if (window.adCareApp && window.adCareApp.mediaRecorder) {
             window.adCareApp.mediaRecorder.startTaskRecording('daily_medication', 'daily');
         }
@@ -110,6 +112,8 @@ class ModuleCDaily {
     }
 
     renderAppointmentTask(container) {
+        container.innerHTML = '';
+        
         const header = UIComponents.createTaskHeader(
             '线上预约任务',
             '模拟医院预约挂号'
@@ -139,6 +143,8 @@ class ModuleCDaily {
     }
 
     renderFinanceTask(container) {
+        container.innerHTML = '';
+        
         const header = UIComponents.createTaskHeader(
             '财务计算任务',
             '模拟购物找零计算'
@@ -212,6 +218,8 @@ class ModuleCDaily {
     }
 
     renderRouteTask(container) {
+        container.innerHTML = '';
+        
         const header = UIComponents.createTaskHeader(
             '路线规划任务',
             '选择合理的出行路线'
@@ -241,6 +249,8 @@ class ModuleCDaily {
     }
 
     renderSocialTask(container) {
+        container.innerHTML = '';
+        
         const header = UIComponents.createTaskHeader(
             '社交互动任务',
             '选择合适的社交回应'
@@ -270,6 +280,8 @@ class ModuleCDaily {
     }
 
     runScenario(container, taskType, scenarios) {
+        container.innerHTML = '';
+        
         if (window.adCareApp && window.adCareApp.mediaRecorder) {
             window.adCareApp.mediaRecorder.startTaskRecording(`daily_${taskType}`, 'daily');
         }
@@ -337,31 +349,57 @@ class ModuleCDaily {
             social: '社交互动'
         };
         
-        container.innerHTML = `
-            <div class="mini-result">
-                <div class="score">${score}</div>
-                <div class="score-label">${taskNames[taskType]}得分</div>
-                <p>正确率: ${correct}/${total}</p>
-            </div>
+        container.innerHTML = '';
+        
+        const result = document.createElement('div');
+        result.className = 'mini-result';
+        result.innerHTML = `
+            <div class="score">${score}</div>
+            <div class="score-label">${taskNames[taskType]}得分</div>
+            <p>正确率: ${correct}/${total}</p>
         `;
+        container.appendChild(result);
         
         // Add navigation buttons based on task
         const nav = document.createElement('div');
         nav.className = 'task-nav';
         
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'retry-task-btn';
+        retryBtn.textContent = '重新测试';
+        retryBtn.addEventListener('click', () => {
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment(`daily_${taskType}_retry`);
+            }
+            this.taskData[taskType] = { responses: [], score: 0 };
+            this.renderTask(taskType, container);
+        });
+        
+        nav.appendChild(retryBtn);
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'start-task-btn';
+        
         if (taskType === 'medication') {
-            nav.innerHTML = '<button class="start-task-btn" onclick="adCareApp.switchTask(\'C\', \'appointment\')">下一个任务</button>';
+            nextBtn.textContent = '下一个任务';
+            nextBtn.addEventListener('click', () => { this.app.switchTask('C', 'appointment'); });
         } else if (taskType === 'appointment') {
-            nav.innerHTML = '<button class="start-task-btn" onclick="adCareApp.switchTask(\'C\', \'finance\')">下一个任务</button>';
+            nextBtn.textContent = '下一个任务';
+            nextBtn.addEventListener('click', () => { this.app.switchTask('C', 'finance'); });
         } else if (taskType === 'finance') {
-            nav.innerHTML = '<button class="start-task-btn" onclick="adCareApp.switchTask(\'C\', \'route\')">下一个任务</button>';
+            nextBtn.textContent = '下一个任务';
+            nextBtn.addEventListener('click', () => { this.app.switchTask('C', 'route'); });
         } else if (taskType === 'route') {
-            nav.innerHTML = '<button class="start-task-btn" onclick="adCareApp.switchTask(\'C\', \'social\')">下一个任务</button>';
+            nextBtn.textContent = '下一个任务';
+            nextBtn.addEventListener('click', () => { this.app.switchTask('C', 'social'); });
         } else if (taskType === 'social') {
-            nav.innerHTML = '<button class="start-task-btn" onclick="adCareApp.confirmExit()">完成所有评估</button>';
+            nextBtn.textContent = '完成所有评估';
+            nextBtn.addEventListener('click', () => { this.app.confirmExit(); });
         }
         
+        nav.appendChild(nextBtn);
         container.appendChild(nav);
+        
         this.app.markTaskCompleted('C', taskType);
         this.app.dataLogger.logEvent('task_completed', {
             task: taskType,

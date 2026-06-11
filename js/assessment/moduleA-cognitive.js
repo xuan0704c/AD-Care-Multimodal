@@ -31,6 +31,8 @@ class ModuleACognitive {
     }
 
     renderMemoryTask(container) {
+        container.innerHTML = '';
+        
         const header = UIComponents.createTaskHeader(
             '短时记忆测试',
             '观察数字序列，然后按照正确的顺序点击数字'
@@ -50,6 +52,8 @@ class ModuleACognitive {
     }
 
     startMemoryTest(container) {
+        container.innerHTML = '';
+        
         if (window.adCareApp && window.adCareApp.mediaRecorder) {
             window.adCareApp.mediaRecorder.startTaskRecording('memory_test', 'cognitive');
         }
@@ -198,13 +202,35 @@ class ModuleACognitive {
             attempts: this.taskData.memory.attempts
         });
         
-        // 自动跳转到执行功能测试
-        setTimeout(() => {
+        const nav = document.createElement('div');
+        nav.className = 'task-nav';
+        
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'retry-task-btn';
+        retryBtn.textContent = '重新测试';
+        retryBtn.addEventListener('click', () => {
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment('memory_retry');
+            }
+            this.taskData.memory = { attempts: [], score: 0 };
+            this.renderMemoryTask(container);
+        });
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'start-task-btn';
+        nextBtn.textContent = '下一个任务';
+        nextBtn.addEventListener('click', () => {
             this.app.switchTask('A', 'executive');
-        }, 2000);
+        });
+        
+        nav.appendChild(retryBtn);
+        nav.appendChild(nextBtn);
+        container.appendChild(nav);
     }
 
     renderExecutiveTask(container) {
+        container.innerHTML = '';
+        
         const header = UIComponents.createTaskHeader(
             'Stroop色词测试',
             '选择文字所显示的颜色，而不是文字本身的含义'
@@ -224,6 +250,12 @@ class ModuleACognitive {
     }
 
     startStroopTest(container) {
+        container.innerHTML = '';
+        
+        if (window.adCareApp && window.adCareApp.mediaRecorder) {
+            window.adCareApp.mediaRecorder.startTaskRecording('executive_test', 'cognitive');
+        }
+        
         const trials = [
             { word: '红色', color: 'blue', correct: '蓝色' },
             { word: '绿色', color: 'red', correct: '红色' },
@@ -246,8 +278,15 @@ class ModuleACognitive {
         
         const runTrial = () => {
             if (currentTrial >= trials.length) {
+                if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                    window.adCareApp.mediaRecorder.stopTaskRecording();
+                }
                 this.showStroopResults(container, correctCount, trials.length);
                 return;
+            }
+            
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment(`executive_trial_${currentTrial + 1}`);
             }
             
             container.innerHTML = '';
@@ -328,13 +367,35 @@ class ModuleACognitive {
             avgReactionTime: avgReactionTime
         });
         
-        // 自动跳转到语言测试
-        setTimeout(() => {
+        const nav = document.createElement('div');
+        nav.className = 'task-nav';
+        
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'retry-task-btn';
+        retryBtn.textContent = '重新测试';
+        retryBtn.addEventListener('click', () => {
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment('executive_retry');
+            }
+            this.taskData.executive = { attempts: [], score: 0 };
+            this.renderExecutiveTask(container);
+        });
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'start-task-btn';
+        nextBtn.textContent = '下一个任务';
+        nextBtn.addEventListener('click', () => {
             this.app.switchTask('A', 'language');
-        }, 2000);
+        });
+        
+        nav.appendChild(retryBtn);
+        nav.appendChild(nextBtn);
+        container.appendChild(nav);
     }
 
     renderLanguageTask(container) {
+        container.innerHTML = '';
+        
         const header = UIComponents.createTaskHeader(
             '词语流畅性测试',
             '在60秒内说出尽可能多的动物名称'
@@ -355,6 +416,10 @@ class ModuleACognitive {
 
     startFluencyTest(container) {
         container.innerHTML = '';
+        
+        if (window.adCareApp && window.adCareApp.mediaRecorder) {
+            window.adCareApp.mediaRecorder.startTaskRecording('language_test', 'cognitive');
+        }
         
         const timer = UIComponents.createTimer(60, () => {
             this.showFluencyResults(container, words.length);
@@ -409,27 +474,60 @@ class ModuleACognitive {
     }
 
     showFluencyResults(container, count) {
-        container.innerHTML = `
-            <div class="mini-result">
-                <div class="score">${count}</div>
-                <div class="score-label">语言流畅性得分</div>
-                <p>您在60秒内说出了${count}个词语</p>
-                <p style="margin-top: 1rem; color: #666;">即将自动跳转到下一项测试...</p>
-            </div>
+        if (window.adCareApp && window.adCareApp.mediaRecorder) {
+            window.adCareApp.mediaRecorder.stopTaskRecording();
+        }
+        
+        container.innerHTML = '';
+        
+        const result = document.createElement('div');
+        result.className = 'mini-result';
+        result.innerHTML = `
+            <div class="score">${count}</div>
+            <div class="score-label">语言流畅性得分</div>
+            <p>您在60秒内说出了${count}个词语</p>
         `;
+        container.appendChild(result);
+        
         this.app.markTaskCompleted('A', 'language');
         this.app.dataLogger.logEvent('task_completed', {
             task: 'language',
             score: count
         });
         
-        // 自动跳转到视空间测试
-        setTimeout(() => {
+        const nav = document.createElement('div');
+        nav.className = 'task-nav';
+        
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'retry-task-btn';
+        retryBtn.textContent = '重新测试';
+        retryBtn.addEventListener('click', () => {
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment('language_retry');
+            }
+            this.taskData.language = { attempts: [], score: 0 };
+            this.renderLanguageTask(container);
+        });
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'start-task-btn';
+        nextBtn.textContent = '下一个任务';
+        nextBtn.addEventListener('click', () => {
             this.app.switchTask('A', 'spatial');
-        }, 2000);
+        });
+        
+        nav.appendChild(retryBtn);
+        nav.appendChild(nextBtn);
+        container.appendChild(nav);
     }
 
     renderSpatialTask(container) {
+        container.innerHTML = '';
+        
+        if (window.adCareApp && window.adCareApp.mediaRecorder) {
+            window.adCareApp.mediaRecorder.startTaskRecording('spatial_test', 'cognitive');
+        }
+        
         const header = UIComponents.createTaskHeader(
             '时钟绘制测试',
             '在钟面上画出指定的时间'
@@ -497,6 +595,10 @@ class ModuleACognitive {
     }
 
     showSpatialResults(container) {
+        if (window.adCareApp && window.adCareApp.mediaRecorder) {
+            window.adCareApp.mediaRecorder.stopTaskRecording();
+        }
+        
         if (this.clockCleanup) {
             this.clockCleanup();
         }
@@ -516,10 +618,30 @@ class ModuleACognitive {
             attempts: this.taskData.spatial.attempts.length
         });
         
-        // 自动跳转到日常功能测试
-        setTimeout(() => {
+        const nav = document.createElement('div');
+        nav.className = 'task-nav';
+        
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'retry-task-btn';
+        retryBtn.textContent = '重新测试';
+        retryBtn.addEventListener('click', () => {
+            if (window.adCareApp && window.adCareApp.mediaRecorder) {
+                window.adCareApp.mediaRecorder.saveTaskSegment('spatial_retry');
+            }
+            this.taskData.spatial = { attempts: [], score: 0 };
+            this.renderSpatialTask(container);
+        });
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'start-task-btn';
+        nextBtn.textContent = '下一个任务';
+        nextBtn.addEventListener('click', () => {
             this.app.switchModule('C');
             this.app.switchTask('C', 'medication');
-        }, 2000);
+        });
+        
+        nav.appendChild(retryBtn);
+        nav.appendChild(nextBtn);
+        container.appendChild(nav);
     }
 }
