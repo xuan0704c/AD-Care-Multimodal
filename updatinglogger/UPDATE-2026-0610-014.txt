@@ -1,0 +1,16 @@
+====================================================
+Update Log 2026-06-10-014
+====================================================
+
+1. 实现报告真正存档功能
+   - 存档位置：localStorage -> adcare_archived_reports（sessionId 数组）
+   - report-detail.html：
+     · 新增 ARCHIVED_KEY = 'adcare_archived_reports'
+     · 新增 getArchivedList() / isArchived() / toggleArchive() / updateArchiveBtn()
+     · 底部"存档记录"按钮改为 toggle 模式：
+       - 未存档时点击 -> 存入 localStorage，按钮变黄显示"取消存档"
+       - 已存档时点击 -> 从 localStorage 移除，按钮恢复灰色显示"存档记录"
+   - report.html：
+     · 新增 ARCHIVED_KEY 和 isArchived() 函数
+     · 报告卡片右上角状态标签旁增加"已存档"黄色标签（仅对已存档报告显示）
+====================================================

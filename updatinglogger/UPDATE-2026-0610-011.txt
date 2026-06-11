@@ -1,0 +1,10 @@
+====================================================
+Update Log 2026-06-10-011
+====================================================
+
+1. 评估后患者状态改为"报告生成中"
+   - index.html updatePatientStatusAfterAssessment() 中：
+     · pending -> reporting（原 review 改为 reporting）
+   - patients.html getStatusConfig() 新增：
+     · reporting: { label: '报告生成中', bg: 'bg-purple-100', text: 'text-purple-600', border: 'border-purple-200' }
+====================================================

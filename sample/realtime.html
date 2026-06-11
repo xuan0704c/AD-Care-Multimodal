@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>实时监测 - 智慧忆护</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/echarts.min.5.4.3.js"></script>
+<style>
+        body { background-color: #0f172a; color: white; }
+        .app-container {
+            width: 375px;
+            height: 812px;
+            background: #0f172a;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 8px solid #334155;
+            border-radius: 40px;
+            margin: 20px auto;
+        }
+        .scroll-container::-webkit-scrollbar { display: none; }
+        .data-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 20px;
+        }
+        .status-dot {
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+<div class="app-container flex flex-col">
+<!-- 顶部状态栏 -->
+<div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs font-bold text-gray-400">
+<span>09:41</span>
+<div class="flex gap-1">
+<iconify-icon icon="mdi:signal"></iconify-icon>
+<iconify-icon icon="mdi:wifi"></iconify-icon>
+<iconify-icon icon="mdi:battery"></iconify-icon>
+</div>
+</div>
+<!-- 顶部导航 -->
+<div class="px-5 py-4 flex items-center justify-between border-b border-gray-800">
+<div class="flex items-center gap-3">
+<a class="text-gray-400" href="guidance.html">
+<iconify-icon icon="mdi:arrow-left" width="24"></iconify-icon>
+</a>
+<div>
+<h1 class="text-lg font-bold">多模态感知监控</h1>
+<p class="text-[10px] text-gray-500">正在实时监测：王德发 (78岁)</p>
+</div>
+</div>
+<div class="flex items-center gap-2 bg-red-500/20 px-2 py-1 rounded text-red-500 text-[10px] font-bold">
+<span class="w-1.5 h-1.5 bg-red-500 rounded-full status-dot"></span>
+                REC 实时采集
+            </div>
+</div>
+<!-- 主内容区 -->
+<div class="flex-1 overflow-y-auto scroll-container p-4 space-y-4 pb-24">
+<!-- 即时风险评分 -->
+<div class="data-card p-4 flex gap-4 items-center">
+<div class="w-24 h-24" id="riskGauge"></div>
+<div class="flex-1">
+<p class="text-xs text-gray-400">即时综合风险值</p>
+<p class="text-2xl font-black text-yellow-500">76.8</p>
+<div class="mt-1 flex items-center gap-1">
+<span class="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-500 text-[10px] rounded font-bold border border-yellow-500/30 uppercase">中风险范围</span>
+</div>
+</div>
+</div>
+<!-- 语音与生理波形 -->
+<div class="data-card p-4">
+<div class="flex justify-between items-center mb-2">
+<h3 class="text-xs font-bold flex items-center gap-1 text-blue-400">
+<iconify-icon icon="mdi:waveform"></iconify-icon> 语音与生理数据流
+                    </h3>
+<span class="text-[10px] text-gray-500">同步频率：256Hz</span>
+</div>
+<div class="w-full h-32" id="waveChart"></div>
+</div>
+<!-- 雷达图对比 -->
+<div class="data-card p-4">
+<div class="flex justify-between items-center mb-2">
+<h3 class="text-xs font-bold flex items-center gap-1 text-green-400">
+<iconify-icon icon="mdi:radar"></iconify-icon> 多维度认知倾向雷达
+                    </h3>
+</div>
+<div class="w-full h-48" id="radarChart"></div>
+</div>
+<!-- 步态与面部监测 -->
+<div class="grid grid-cols-2 gap-4">
+<div class="data-card p-3">
+<h4 class="text-[10px] font-bold text-gray-400 mb-2">步态对称分析</h4>
+<div class="flex flex-col items-center">
+<div class="flex gap-4 mb-2">
+<div class="flex flex-col items-center">
+<div class="w-2 h-16 bg-blue-900 rounded-full relative overflow-hidden">
+<div class="absolute bottom-0 w-full h-4/5 bg-blue-500"></div>
+</div>
+<span class="text-[8px] mt-1">左脚</span>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-2 h-16 bg-blue-900 rounded-full relative overflow-hidden">
+<div class="absolute bottom-0 w-full h-3/5 bg-blue-400"></div>
+</div>
+<span class="text-[8px] mt-1">右脚</span>
+</div>
+</div>
+<p class="text-[10px] text-red-400 font-bold">偏移率：12.5%</p>
+</div>
+</div>
+<div class="data-card p-3 overflow-hidden">
+<h4 class="text-[10px] font-bold text-gray-400 mb-2">面部表情微特征</h4>
+<div class="relative w-full h-20 bg-black/30 rounded-lg flex items-center justify-center overflow-hidden">
+<img alt="Facial dots" class="w-full h-full object-cover opacity-50" src="https://modao.cc/agent-py/media/generated_images/2026-04-04/c139f675b2424bceb667fa64d0b79290.jpg"/>
+<div class="absolute inset-0 flex flex-wrap gap-1 p-1 items-center justify-center">
+<span class="w-1 h-1 bg-green-500 rounded-full"></span>
+<span class="w-1 h-1 bg-green-500 rounded-full"></span>
+<span class="w-1 h-1 bg-green-500 rounded-full"></span>
+</div>
+</div>
+<p class="text-[10px] text-center mt-2 text-gray-400">倾向：焦虑/抑郁</p>
+</div>
+</div>
+<!-- 异常预警中心 -->
+<div class="p-2 space-y-2">
+<h3 class="text-xs font-bold flex items-center gap-1 text-red-500">
+<iconify-icon icon="mdi:alert-decagram"></iconify-icon> 实时预警中心 (3)
+                </h3>
+<div class="bg-red-500/10 border border-red-500/20 p-2 rounded-lg flex gap-3 items-start">
+<iconify-icon class="text-red-500 mt-1" icon="mdi:alert-circle" width="16"></iconify-icon>
+<div>
+<p class="text-xs font-bold">步态失稳预警</p>
+<p class="text-[10px] text-gray-400 mt-0.5">行走过程中重心左右偏移超出阈值 2.3°</p>
+</div>
+</div>
+<div class="bg-yellow-500/10 border border-yellow-500/20 p-2 rounded-lg flex gap-3 items-start">
+<iconify-icon class="text-yellow-500 mt-1" icon="mdi:alert-circle" width="16"></iconify-icon>
+<div>
+<p class="text-xs font-bold">语言流利度下降</p>
+<p class="text-[10px] text-gray-400 mt-0.5">回答延迟增加，语义丰富度较基准线低 15%</p>
+</div>
+</div>
+</div>
+</div>
+<!-- 底部操作按钮 -->
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-800 h-24 flex items-center gap-4">
+<button class="flex-1 bg-gray-700 text-white py-3 rounded-xl font-bold text-sm">暂停采集</button>
+<a class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm text-center shadow-lg shadow-blue-900/40" href="report.html">停止并生成报告</a>
+</div>
+</div>
+<script>
+        // 仪表盘渲染
+        const gaugeChart = echarts.init(document.getElementById('riskGauge'));
+        gaugeChart.setOption({
+            series: [{
+                type: 'gauge',
+                startAngle: 180,
+                endAngle: 0,
+                min: 0,
+                max: 100,
+                pointer: { show: false },
+                progress: { show: true, width: 8, itemStyle: { color: '#eab308' } },
+                axisLine: { lineStyle: { width: 8, color: [[1, '#1e293b']] } },
+                axisTick: { show: false },
+                splitLine: { show: false },
+                axisLabel: { show: false },
+                detail: {
+                    valueAnimation: true,
+                    offsetCenter: [0, -10],
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    formatter: '{value}',
+                    color: '#eab308'
+                },
+                data: [{ value: 76.8 }]
+            }]
+        });
+
+        // 语音波形动态效果
+        const waveChart = echarts.init(document.getElementById('waveChart'));
+        function generateData() {
+            let data = [];
+            for (let i = 0; i < 50; i++) {
+                data.push(Math.random() * 50 + 20);
+            }
+            return data;
+        }
+        waveChart.setOption({
+            xAxis: { type: 'category', show: false },
+            yAxis: { type: 'value', show: false },
+            series: [{
+                data: generateData(),
+                type: 'line',
+                smooth: true,
+                symbol: 'none',
+                lineStyle: { color: '#60a5fa', width: 2 },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(96, 165, 250, 0.4)' },
+                        { offset: 1, color: 'transparent' }
+                    ])
+                }
+            }]
+        });
+
+        // 定时更新波形数据模拟实时
+        setInterval(() => {
+            waveChart.setOption({ series: [{ data: generateData() }] });
+        }, 1000);
+
+        // 雷达图对比
+        const radarChart = echarts.init(document.getElementById('radarChart'));
+        radarChart.setOption({
+            radar: {
+                indicator: [
+                    { name: '记忆', max: 100 },
+                    { name: '定向', max: 100 },
+                    { name: '语言', max: 100 },
+                    { name: '计算', max: 100 },
+                    { name: '视觉', max: 100 }
+                ],
+                shape: 'circle',
+                splitNumber: 3,
+                axisName: { color: '#94a3b8', fontSize: 10 },
+                splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.1)' } },
+                splitArea: { show: false },
+                axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.1)' } }
+            },
+            series: [{
+                type: 'radar',
+                lineStyle: { width: 2 },
+                data: [
+                    {
+                        value: [85, 90, 92, 95, 88],
+                        name: '基准',
+                        symbol: 'none',
+                        areaStyle: { color: 'rgba(148, 163, 184, 0.1)' },
+                        lineStyle: { type: 'dashed', opacity: 0.5 }
+                    },
+                    {
+                        value: [60, 75, 55, 80, 70],
+                        name: '当前',
+                        areaStyle: { color: 'rgba(34, 197, 94, 0.2)' },
+                        itemStyle: { color: '#22c55e' }
+                    }
+                ]
+            }]
+        });
+    </script>
+</body>
+</html>

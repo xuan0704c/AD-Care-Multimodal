@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>登录 - 智慧忆护阿尔茨海默病筛查系统</title>
+    <script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+    <script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+    <style>
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .app-container-mobile {
+            width: 375px;
+            height: 812px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+        }
+        .app-container-desktop {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-in-left {
+            animation: slideInLeft 0.4s ease-out;
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .slide-in-right {
+            animation: slideInRight 0.4s ease-out;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .scale-in {
+            animation: scaleIn 0.3s ease-out;
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        /* 桌面端样式 */
+        @media (min-width: 768px) {
+            .mobile-only {
+                display: none !important;
+            }
+            .desktop-only {
+                display: block !important;
+            }
+        }
+        
+        /* 移动端样式 */
+        @media (max-width: 767px) {
+            .mobile-only {
+                display: block !important;
+            }
+            .desktop-only {
+                display: none !important;
+            }
+            body {
+                background: #f0f4f8;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 移动端布局 -->
+    <div class="app-container-mobile mobile-only">
+        <!-- 状态栏模拟 -->
+        <div class="px-6 pt-4 flex justify-between items-center text-xs font-bold">
+            <span id="clock">09:41</span>
+            <div class="flex gap-1">
+                <iconify-icon icon="mdi:signal"></iconify-icon>
+                <iconify-icon icon="mdi:wifi"></iconify-icon>
+                <iconify-icon icon="mdi:battery"></iconify-icon>
+            </div>
+        </div>
+        
+        <div class="flex-1 px-8 pt-12">
+            <!-- Logo与标题 -->
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg mb-4">
+                    <iconify-icon class="text-white text-5xl" icon="mdi:brain"></iconify-icon>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">智慧忆护</h1>
+                <p class="text-blue-600 text-sm font-medium tracking-widest mt-1">边缘端多模态智能筛查系统</p>
+            </div>
+
+            <!-- 身份切换 -->
+            <div class="mb-8">
+                <div class="flex bg-gray-100 rounded-2xl p-1.5">
+                    <button id="patient-mode-btn" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all bg-white shadow-sm text-blue-600">
+                        <iconify-icon icon="mdi:user-circle" width="18" class="inline-block mr-2"></iconify-icon>
+                        患者入口
+                    </button>
+                    <button id="staff-mode-btn" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all text-gray-500 hover:text-gray-700">
+                        <iconify-icon icon="mdi:user-md" width="18" class="inline-block mr-2"></iconify-icon>
+                        医护人员
+                    </button>
+                </div>
+            </div>
+
+            <!-- 患者快速入口 -->
+            <div id="patient-panel" class="fade-in">
+                <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl">
+                    <div class="text-center mb-6">
+                        <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <iconify-icon icon="mdi:clipboard-check" width="40" class="text-white"></iconify-icon>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2">开始认知评估</h2>
+                        <p class="text-blue-100 text-sm">点击下方按钮，立即开始筛查</p>
+                    </div>
+                    <button id="patient-login-btn" class="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-50 transition-colors">
+                        开始评估
+                    </button>
+                </div>
+            </div>
+
+            <!-- 医护人员登录表单 -->
+            <div id="staff-panel" class="hidden">
+                <div class="space-y-5">
+                    <div class="relative">
+                        <span class="absolute left-4 top-4 text-gray-400">
+                            <iconify-icon icon="mdi:account-outline" width="20"></iconify-icon>
+                        </span>
+                        <input id="username" class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="社区医生/志愿者工号" type="text"/>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-4 top-4 text-gray-400">
+                            <iconify-icon icon="mdi:lock-outline" width="20"></iconify-icon>
+                        </span>
+                        <input id="password" class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="请输入密码" type="password"/>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-500 px-1">
+                        <label class="flex items-center gap-1">
+                            <input id="remember" class="rounded" type="checkbox"/> 记住账号
+                        </label>
+                        <a class="text-blue-600" href="#">忘记密码？</a>
+                    </div>
+                    <button id="staff-login-btn" class="block w-full bg-blue-600 text-white text-center py-4 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+                        进入系统
+                    </button>
+                    <p id="error-msg" class="text-red-500 text-xs text-center hidden">工号或密码错误，请重试</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部版权 -->
+        <div class="p-8 text-center">
+            <p class="text-[10px] text-gray-400 uppercase tracking-widest leading-loose">
+                基于边缘计算架构 · 多模态感知技术<br/>
+                国家老年疾病临床医学研究中心 提供技术支持
+            </p>
+        </div>
+    </div>
+
+    <!-- 桌面端布局 -->
+    <div class="app-container-desktop desktop-only">
+        <div class="flex flex-col lg:flex-row gap-12 items-center w-full">
+            <!-- 左侧信息区 -->
+            <div class="flex-1 text-center lg:text-left slide-in-left">
+                <div class="w-32 h-32 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto lg:mx-0 mb-8">
+                    <iconify-icon class="text-white text-7xl" icon="mdi:brain"></iconify-icon>
+                </div>
+                <h1 class="text-4xl font-bold text-white mb-4">智慧忆护</h1>
+                <p class="text-xl text-white/80 mb-2">边缘端多模态智能筛查系统</p>
+                <p class="text-white/60 max-w-md mx-auto lg:mx-0">
+                    基于面部视频、语音音频、交互行为和手写轨迹的多模态数据采集，对认知功能进行客观全面评估。
+                </p>
+                <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3">
+                        <p class="text-2xl font-bold text-white">156+</p>
+                        <p class="text-sm text-white/60">社区覆盖</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3">
+                        <p class="text-2xl font-bold text-white">5000+</p>
+                        <p class="text-sm text-white/60">筛查人次</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3">
+                        <p class="text-2xl font-bold text-white">98%</p>
+                        <p class="text-sm text-white/60">准确率</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧登录区 -->
+            <div class="flex-1 max-w-md w-full">
+                <div class="bg-white rounded-3xl shadow-2xl p-8 scale-in">
+                    <!-- 身份切换 -->
+                    <div class="flex bg-gray-100 rounded-2xl p-2 mb-8">
+                        <button id="patient-mode-btn-desktop" class="flex-1 py-4 px-6 rounded-xl font-bold text-lg transition-all bg-white shadow-md text-blue-600">
+                            <iconify-icon icon="mdi:user-circle" width="24" class="inline-block mr-2"></iconify-icon>
+                            患者入口
+                        </button>
+                        <button id="staff-mode-btn-desktop" class="flex-1 py-4 px-6 rounded-xl font-bold text-lg transition-all text-gray-500 hover:text-gray-700">
+                            <iconify-icon icon="mdi:user-md" width="24" class="inline-block mr-2"></iconify-icon>
+                            医护人员
+                        </button>
+                    </div>
+
+                    <!-- 患者快速入口 -->
+                    <div id="patient-panel-desktop">
+                        <div class="text-center mb-6">
+                            <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                                <iconify-icon icon="mdi:clipboard-check" width="48" class="text-white"></iconify-icon>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2">开始认知评估</h2>
+                            <p class="text-gray-500">点击下方按钮，立即进行认知筛查</p>
+                        </div>
+                        <button id="patient-login-btn-desktop" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-5 rounded-2xl font-bold text-xl shadow-lg shadow-blue-200 hover:shadow-xl hover:scale-[1.02] transition-all">
+                            开始评估
+                        </button>
+                    </div>
+
+                    <!-- 医护人员登录表单 -->
+                    <div id="staff-panel-desktop" class="hidden">
+                        <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">医护人员登录</h2>
+                        <div class="space-y-4">
+                            <div class="relative">
+                                <span class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                                    <iconify-icon icon="mdi:account-outline" width="24"></iconify-icon>
+                                </span>
+                                <input id="username-desktop" class="w-full pl-14 pr-5 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base" placeholder="社区医生/志愿者工号" type="text"/>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                                    <iconify-icon icon="mdi:lock-outline" width="24"></iconify-icon>
+                                </span>
+                                <input id="password-desktop" class="w-full pl-14 pr-5 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base" placeholder="请输入密码" type="password"/>
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-gray-500">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input id="remember-desktop" class="w-4 h-4 rounded" type="checkbox"/> 记住账号
+                                </label>
+                                <a class="text-blue-600 hover:text-blue-700" href="#">忘记密码？</a>
+                            </div>
+                            <button id="staff-login-btn-desktop" class="block w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 hover:shadow-xl transition-all">
+                                进入系统
+                            </button>
+                            <p id="error-msg-desktop" class="text-red-500 text-sm text-center hidden">工号或密码错误，请重试</p>
+                        </div>
+                    </div>
+
+                    <!-- 底部版权 -->
+                    <div class="mt-8 pt-6 border-t border-gray-100 text-center">
+                        <p class="text-xs text-gray-400">
+                            国家老年疾病临床医学研究中心 提供技术支持
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 更新时间和日期
+        function updateDateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('clock')?.textContent = `${hours}:${minutes}`;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // 模式切换逻辑
+        function switchMode(isPatientMode) {
+            // 移动端
+            const patientPanel = document.getElementById('patient-panel');
+            const staffPanel = document.getElementById('staff-panel');
+            const patientBtn = document.getElementById('patient-mode-btn');
+            const staffBtn = document.getElementById('staff-mode-btn');
+            
+            if (patientPanel && staffPanel && patientBtn && staffBtn) {
+                if (isPatientMode) {
+                    patientPanel.classList.remove('hidden');
+                    staffPanel.classList.add('hidden');
+                    patientBtn.classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+                    patientBtn.classList.remove('text-gray-500');
+                    staffBtn.classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+                    staffBtn.classList.add('text-gray-500');
+                } else {
+                    patientPanel.classList.add('hidden');
+                    staffPanel.classList.remove('hidden');
+                    patientBtn.classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+                    patientBtn.classList.add('text-gray-500');
+                    staffBtn.classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+                    staffBtn.classList.remove('text-gray-500');
+                }
+            }
+
+            // 桌面端
+            const patientPanelDesktop = document.getElementById('patient-panel-desktop');
+            const staffPanelDesktop = document.getElementById('staff-panel-desktop');
+            const patientBtnDesktop = document.getElementById('patient-mode-btn-desktop');
+            const staffBtnDesktop = document.getElementById('staff-mode-btn-desktop');
+            
+            if (patientPanelDesktop && staffPanelDesktop && patientBtnDesktop && staffBtnDesktop) {
+                if (isPatientMode) {
+                    patientPanelDesktop.classList.remove('hidden');
+                    staffPanelDesktop.classList.add('hidden');
+                    patientBtnDesktop.classList.add('bg-white', 'shadow-md', 'text-blue-600');
+                    patientBtnDesktop.classList.remove('text-gray-500');
+                    staffBtnDesktop.classList.remove('bg-white', 'shadow-md', 'text-blue-600');
+                    staffBtnDesktop.classList.add('text-gray-500');
+                } else {
+                    patientPanelDesktop.classList.add('hidden');
+                    staffPanelDesktop.classList.remove('hidden');
+                    patientBtnDesktop.classList.remove('bg-white', 'shadow-md', 'text-blue-600');
+                    patientBtnDesktop.classList.add('text-gray-500');
+                    staffBtnDesktop.classList.add('bg-white', 'shadow-md', 'text-blue-600');
+                    staffBtnDesktop.classList.remove('text-gray-500');
+                }
+            }
+        }
+
+        // 移动端事件绑定
+        document.getElementById('patient-mode-btn')?.addEventListener('click', () => switchMode(true));
+        document.getElementById('staff-mode-btn')?.addEventListener('click', () => switchMode(false));
+        
+        // 桌面端事件绑定
+        document.getElementById('patient-mode-btn-desktop')?.addEventListener('click', () => switchMode(true));
+        document.getElementById('staff-mode-btn-desktop')?.addEventListener('click', () => switchMode(false));
+
+        // 记住账号功能（移动端）
+        const savedUsername = localStorage.getItem('portal_username');
+        if (savedUsername) {
+            document.getElementById('username')?.setAttribute('value', savedUsername);
+            document.getElementById('remember')?.checked = true;
+            document.getElementById('username-desktop')?.setAttribute('value', savedUsername);
+            document.getElementById('remember-desktop')?.checked = true;
+        }
+
+        // 患者登录（直接进入患者门户）
+        const patientLoginBtns = [
+            document.getElementById('patient-login-btn'),
+            document.getElementById('patient-login-btn-desktop')
+        ];
+        
+        patientLoginBtns.forEach(btn => {
+            btn?.addEventListener('click', function() {
+                sessionStorage.setItem('portal_logged_in', 'true');
+                sessionStorage.setItem('user_role', 'patient');
+                window.location.href = 'patient-dashboard.html';
+            });
+        });
+
+        // 医护人员登录验证
+        function staffLogin(username, password, remember, errorMsgId) {
+            const errorMsg = document.getElementById(errorMsgId);
+            const appContainer = document.querySelector('.app-container-mobile');
+
+            if (!username || !password) {
+                errorMsg.textContent = '请输入工号和密码';
+                errorMsg.classList.remove('hidden');
+                appContainer?.classList.add('shake');
+                setTimeout(() => appContainer?.classList.remove('shake'), 500);
+                return;
+            }
+
+            // 模拟验证
+            if (username.length >= 3 && password.length >= 4) {
+                if (remember) {
+                    localStorage.setItem('portal_username', username);
+                } else {
+                    localStorage.removeItem('portal_username');
+                }
+                sessionStorage.setItem('portal_logged_in', 'true');
+                sessionStorage.setItem('user_role', 'staff');
+                window.location.href = 'dashboard.html';
+            } else {
+                errorMsg.textContent = '工号或密码错误，请重试';
+                errorMsg.classList.remove('hidden');
+                appContainer?.classList.add('shake');
+                setTimeout(() => appContainer?.classList.remove('shake'), 500);
+            }
+        }
+
+        // 移动端医护人员登录
+        document.getElementById('staff-login-btn')?.addEventListener('click', function() {
+            staffLogin(
+                document.getElementById('username').value.trim(),
+                document.getElementById('password').value.trim(),
+                document.getElementById('remember').checked,
+                'error-msg'
+            );
+        });
+
+        // 桌面端医护人员登录
+        document.getElementById('staff-login-btn-desktop')?.addEventListener('click', function() {
+            staffLogin(
+                document.getElementById('username-desktop').value.trim(),
+                document.getElementById('password-desktop').value.trim(),
+                document.getElementById('remember-desktop').checked,
+                'error-msg-desktop'
+            );
+        });
+
+        // 回车登录
+        document.getElementById('password')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('staff-login-btn')?.click();
+            }
+        });
+
+        document.getElementById('password-desktop')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('staff-login-btn-desktop')?.click();
+            }
+        });
+    </script>
+</body>
+</html>
