@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>患者门户 - 智慧忆护</title>
+    <script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+    <script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+    <style>
+        body { 
+            background-color: #f8fafc; 
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .app-container-mobile {
+            width: 375px;
+            height: 812px;
+            background: #f8fafc;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+        }
+        .app-container-desktop {
+            min-height: 100vh;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+        .scroll-container::-webkit-scrollbar { display: none; }
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse-animation {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 桌面端样式 */
+        @media (min-width: 768px) {
+            .mobile-only {
+                display: none !important;
+            }
+            .desktop-only {
+                display: block !important;
+            }
+        }
+        
+        /* 移动端样式 */
+        @media (max-width: 767px) {
+            .mobile-only {
+                display: block !important;
+            }
+            .desktop-only {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 移动端布局 -->
+    <div class="app-container-mobile mobile-only">
+        <!-- 顶部状态栏 -->
+        <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs font-bold bg-white">
+            <span id="clock">09:41</span>
+            <div class="flex gap-1">
+                <iconify-icon class="text-gray-800" icon="mdi:signal"></iconify-icon>
+                <iconify-icon class="text-gray-800" icon="mdi:wifi"></iconify-icon>
+                <iconify-icon class="text-gray-800" icon="mdi:battery"></iconify-icon>
+            </div>
+        </div>
+
+        <!-- 欢迎区域 -->
+        <div class="px-5 py-6 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+            <p class="text-sm text-blue-100 mb-1">您好</p>
+            <h1 class="text-2xl font-bold">患者朋友</h1>
+            <p class="text-blue-100 text-sm mt-2">今天也要保持好心情哦</p>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 overflow-y-auto scroll-container p-5 space-y-6 pb-24 fade-in">
+            <!-- 开始评估卡片 -->
+            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-blue-200 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div class="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                            <iconify-icon class="text-white text-3xl" icon="mdi:brain"></iconify-icon>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold">认知评估</h2>
+                            <p class="text-blue-100 text-xs">多模态智能筛查</p>
+                        </div>
+                    </div>
+                    <p class="text-sm text-blue-100 mb-6 leading-relaxed">
+                        通过简单的互动测试，帮助您了解自己的认知健康状况。整个过程约15分钟，请在安静环境下进行。
+                    </p>
+                    <button onclick="enterAssessment()" class="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                        <iconify-icon icon="mdi:play-circle" width="24"></iconify-icon>
+                        开始评估
+                    </button>
+                </div>
+            </div>
+
+            <!-- 评估须知 -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">评估须知</h3>
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-sm font-bold flex-shrink-0">1</div>
+                        <div>
+                            <p class="font-medium text-gray-800">选择安静环境</p>
+                            <p class="text-xs text-gray-500 mt-1">请确保周围环境安静，避免打扰</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-sm font-bold flex-shrink-0">2</div>
+                        <div>
+                            <p class="font-medium text-gray-800">准备好设备</p>
+                            <p class="text-xs text-gray-500 mt-1">确保摄像头和麦克风正常工作</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-sm font-bold flex-shrink-0">3</div>
+                        <div>
+                            <p class="font-medium text-gray-800">保持放松心态</p>
+                            <p class="text-xs text-gray-500 mt-1">评估结果仅供参考，请保持平和心态</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 评估记录 -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">评估记录</h3>
+                    <button onclick="deleteAllReports('patient-recent-reports')" class="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                        <iconify-icon icon="mdi:trash-can-outline" width="14"></iconify-icon>
+                        清空
+                    </button>
+                </div>
+                <div id="patient-recent-reports" class="space-y-3">
+                    <!-- 动态渲染 -->
+                </div>
+            </div>
+
+            <!-- 健康小贴士 -->
+            <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-5 text-white">
+                <div class="flex items-center gap-3 mb-3">
+                    <iconify-icon icon="mdi:heart-pulse" width="28"></iconify-icon>
+                    <h3 class="text-lg font-bold">健康小贴士</h3>
+                </div>
+                <p class="text-green-100 text-sm leading-relaxed">
+                    每天保持适量的运动和社交活动，有助于维持良好的认知功能。建议每周进行至少150分钟的中等强度有氧运动。
+                </p>
+            </div>
+        </div>
+
+        <!-- 底部导航 -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white h-20 border-t border-gray-100 flex items-center justify-around pb-4">
+            <div class="flex flex-col items-center text-blue-600">
+                <iconify-icon icon="mdi:home" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1 font-bold">首页</span>
+            </div>
+            <button onclick="enterAssessment()" class="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-200 text-white pulse-animation">
+                <iconify-icon icon="mdi:play" width="24"></iconify-icon>
+            </button>
+            <button onclick="logout()" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                <iconify-icon icon="mdi:logout" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1">退出</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 桌面端布局 -->
+    <div class="app-container-desktop desktop-only">
+        <div class="max-w-6xl mx-auto">
+            <!-- 顶部header -->
+            <header class="bg-white rounded-2xl shadow-lg p-6 mb-8 slide-up">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                            <iconify-icon class="text-white text-2xl" icon="mdi:brain"></iconify-icon>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">智慧忆护</h1>
+                            <p class="text-gray-500 text-sm">患者认知评估门户</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                        <iconify-icon icon="mdi:logout" width="20"></iconify-icon>
+                        <span class="text-sm font-medium">退出登录</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 欢迎横幅 -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 mb-8 text-white slide-up" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-blue-100 text-lg mb-2">您好，患者朋友</p>
+                        <h2 class="text-3xl font-bold mb-3">欢迎使用智慧忆护认知评估系统</h2>
+                        <p class="text-blue-100 max-w-lg">
+                            通过简单的互动测试，帮助您了解自己的认知健康状况。整个评估过程约15分钟，请在安静环境下进行。
+                        </p>
+                    </div>
+                    <div class="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center">
+                        <iconify-icon class="text-white text-6xl" icon="mdi:brain"></iconify-icon>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主内容区网格 -->
+            <div class="grid lg:grid-cols-3 gap-6">
+                <!-- 左侧2/3：开始评估大卡片 + 评估须知 -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- 开始评估大卡片 -->
+                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-8 text-white shadow-xl shadow-blue-200 relative overflow-hidden slide-up" style="animation-delay: 0.2s">
+                        <div class="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                        <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+                                    <iconify-icon class="text-white text-4xl" icon="mdi:clipboard-check"></iconify-icon>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold">开始认知评估</h3>
+                                    <p class="text-blue-100">多模态智能筛查 · 约15分钟</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-6 mb-8">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 bg-white rounded-full"></div>
+                                    <span class="text-blue-100">面部表情分析</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 bg-white rounded-full"></div>
+                                    <span class="text-blue-100">语音语调评估</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 bg-white rounded-full"></div>
+                                    <span class="text-blue-100">交互行为检测</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 bg-white rounded-full"></div>
+                                    <span class="text-blue-100">手写轨迹分析</span>
+                                </div>
+                            </div>
+                            <button onclick="enterAssessment()" class="w-full bg-white text-blue-600 py-5 rounded-2xl font-bold text-xl shadow-lg hover:bg-blue-50 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
+                                <iconify-icon icon="mdi:play-circle" width="28"></iconify-icon>
+                                开始评估
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 评估须知 -->
+                    <div class="bg-white rounded-3xl p-6 shadow-lg slide-up" style="animation-delay: 0.3s">
+                        <h3 class="text-xl font-bold text-gray-800 mb-5 flex items-center gap-2">
+                            <iconify-icon icon="mdi:info-circle" width="24" class="text-blue-600"></iconify-icon>
+                            评估须知
+                        </h3>
+                        <div class="space-y-5">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold flex-shrink-0">1</div>
+                                <div>
+                                    <p class="font-semibold text-gray-800">选择安静环境</p>
+                                    <p class="text-gray-500 text-sm mt-1">请确保周围环境安静，避免打扰</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold flex-shrink-0">2</div>
+                                <div>
+                                    <p class="font-semibold text-gray-800">准备好设备</p>
+                                    <p class="text-gray-500 text-sm mt-1">确保摄像头和麦克风正常工作</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold flex-shrink-0">3</div>
+                                <div>
+                                    <p class="font-semibold text-gray-800">保持放松心态</p>
+                                    <p class="text-gray-500 text-sm mt-1">评估结果仅供参考，请保持平和心态</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧1/3：评估记录 + 健康小贴士 -->
+                <div class="space-y-6">
+                    <!-- 评估记录 -->
+                    <div class="bg-white rounded-3xl p-6 shadow-lg slide-up" style="animation-delay: 0.4s">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <iconify-icon icon="mdi:history" width="24" class="text-blue-600"></iconify-icon>
+                                我的评估记录
+                            </h3>
+                            <button onclick="deleteAllReports('patient-recent-reports-desktop')" class="text-sm text-red-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl transition-colors flex items-center gap-1.5">
+                                <iconify-icon icon="mdi:trash-can-outline" width="16"></iconify-icon>
+                                清空全部
+                            </button>
+                        </div>
+                        <div id="patient-recent-reports-desktop" class="space-y-4">
+                            <!-- 动态渲染 -->
+                        </div>
+                    </div>
+
+                    <!-- 健康小贴士 -->
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl p-6 text-white shadow-lg slide-up" style="animation-delay: 0.5s">
+                        <div class="flex items-center gap-3 mb-4">
+                            <iconify-icon icon="mdi:heart-pulse" width="32"></iconify-icon>
+                            <h3 class="text-xl font-bold">健康小贴士</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-white/20 rounded-xl p-4">
+                                <p class="font-medium mb-2">适度运动</p>
+                                <p class="text-green-100 text-sm">每周进行至少150分钟的中等强度有氧运动，如快走、太极等。</p>
+                            </div>
+                            <div class="bg-white/20 rounded-xl p-4">
+                                <p class="font-medium mb-2">保持社交</p>
+                                <p class="text-green-100 text-sm">积极参与社交活动，与家人朋友保持良好沟通。</p>
+                            </div>
+                            <div class="bg-white/20 rounded-xl p-4">
+                                <p class="font-medium mb-2">脑力训练</p>
+                                <p class="text-green-100 text-sm">经常进行阅读、下棋、拼图等脑力活动，保持大脑活跃。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部版权 -->
+            <footer class="mt-8 text-center text-gray-400 text-sm slide-up" style="animation-delay: 0.6s">
+                <p>国家老年疾病临床医学研究中心 提供技术支持</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // 登录状态检查
+        if (sessionStorage.getItem('portal_logged_in') !== 'true' || sessionStorage.getItem('user_role') !== 'patient') {
+            window.location.href = 'login.html';
+        }
+
+        // 更新时间
+        function updateDateTime() {
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var clock = document.getElementById('clock');
+            if (clock) clock.textContent = hours + ':' + minutes;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // 进入评估系统
+        function enterAssessment() {
+            sessionStorage.removeItem('preparationCompleted');
+            sessionStorage.removeItem('currentPatientId');
+            window.location.href = '../index.html';
+        }
+
+        // 退出登录
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                sessionStorage.removeItem('portal_logged_in');
+                sessionStorage.removeItem('user_role');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // 删除单条评估记录
+        function deleteReport(sessionId, containerId) {
+            if (!confirm('确定要删除这条评估记录吗？')) return;
+            var SESSION_PREFIX = 'adcare_session_';
+            var storageKey = SESSION_PREFIX + sessionId;
+            localStorage.removeItem(storageKey);
+            // 同时删除报告缓存
+            var cacheKey = 'adcare_report_cache_' + sessionId;
+            localStorage.removeItem(cacheKey);
+            renderPatientReports(containerId);
+        }
+
+        // 删除全部评估记录
+        function deleteAllReports(containerId) {
+            if (!confirm('确定要清空所有评估记录吗？此操作不可恢复！')) return;
+            var SESSION_PREFIX = 'adcare_session_';
+            var REPORT_CACHE_PREFIX = 'adcare_report_cache_';
+            var keysToRemove = [];
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && (key.indexOf(SESSION_PREFIX) === 0 || key.indexOf(REPORT_CACHE_PREFIX) === 0)) {
+                    keysToRemove.push(key);
+                }
+            }
+            for (var j = 0; j < keysToRemove.length; j++) {
+                localStorage.removeItem(keysToRemove[j]);
+            }
+            renderPatientReports('patient-recent-reports');
+            renderPatientReports('patient-recent-reports-desktop');
+        }
+
+        // 渲染评估记录
+        function renderPatientReports(containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            var SESSION_PREFIX = 'adcare_session_';
+            var reports = [];
+
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf(SESSION_PREFIX) === 0) {
+                    try {
+                        var data = JSON.parse(localStorage.getItem(key));
+                        reports.push({
+                            sessionId: data.sessionId || key.replace(SESSION_PREFIX, ''),
+                            storageKey: key,
+                            patientName: data.patientName || '我',
+                            startTime: data.startTime,
+                            endTime: data.endTime,
+                            status: data.endTime ? 'completed' : 'incomplete'
+                        });
+                    } catch (e) {}
+                }
+            }
+
+            reports.sort(function(a, b) { return (b.startTime || 0) - (a.startTime || 0); });
+            var totalCount = reports.length;
+
+            if (totalCount === 0) {
+                container.innerHTML = '<div class="text-center py-8 text-gray-400"><iconify-icon icon="mdi:file-document-outline" width="48" class="mx-auto mb-3 opacity-50"></iconify-icon><p class="text-sm">暂无评估记录</p><p class="text-xs mt-1">点击上方按钮开始首次评估</p></div>';
+                return;
+            }
+
+            var isExpanded = container.getAttribute('data-expanded') === 'true';
+            var INITIAL_COUNT = 2;
+            var EXPANDED_COUNT = 6;
+            var displayCount = isExpanded ? Math.min(EXPANDED_COUNT, totalCount) : Math.min(INITIAL_COUNT, totalCount);
+            var displayList = reports.slice(0, displayCount);
+
+            var listStyle = isExpanded ? 'style="max-height: 320px; overflow-y: auto; padding-right: 4px;"' : '';
+            var html = '<div class="space-y-3" ' + listStyle + '>';
+            for (var j = 0; j < displayList.length; j++) {
+                var r = displayList[j];
+                var dateStr = r.startTime
+                    ? new Date(r.startTime).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/\//g, '-')
+                    : '--';
+                var cfg = r.status === 'completed'
+                    ? { bg: 'bg-green-100', text: 'text-green-600', label: '已完成', icon: 'mdi:check-circle' }
+                    : { bg: 'bg-yellow-100', text: 'text-yellow-600', label: '未完成', icon: 'mdi:alert-circle' };
+
+                if (containerId === 'patient-recent-reports') {
+                    html += '<div class="relative p-4 bg-gray-50 rounded-xl"><button onclick="deleteReport(\'' + r.sessionId + '\', \'' + containerId + '\')" class="absolute top-2 right-2 w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="删除记录"><iconify-icon icon="mdi:trash-can-outline" width="16"></iconify-icon></button><div class="flex items-center gap-3 pr-6"><div class="w-10 h-10 ' + cfg.bg + ' rounded-full flex items-center justify-center ' + cfg.text + '"><iconify-icon icon="' + cfg.icon + '" width="20"></iconify-icon></div><div><p class="font-bold text-gray-800 text-sm">' + r.patientName + ' 的评估</p><p class="text-xs text-gray-400">' + dateStr + '</p></div></div><div class="mt-2"><span class="text-xs ' + cfg.bg + ' ' + cfg.text + ' px-3 py-1 rounded-full font-medium">' + cfg.label + '</span></div></div>';
+                } else {
+                    html += '<div class="relative p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"><button onclick="deleteReport(\'' + r.sessionId + '\', \'' + containerId + '\')" class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="删除记录"><iconify-icon icon="mdi:trash-can-outline" width="18"></iconify-icon></button><div class="flex items-center gap-4 pr-8"><div class="w-12 h-12 ' + cfg.bg + ' rounded-xl flex items-center justify-center ' + cfg.text + '"><iconify-icon icon="' + cfg.icon + '" width="24"></iconify-icon></div><div><p class="font-bold text-gray-800">' + r.patientName + ' 的认知评估</p><p class="text-sm text-gray-500">评估时间：' + dateStr + '</p></div></div><div class="mt-3 flex items-center gap-3"><span class="text-sm ' + cfg.bg + ' ' + cfg.text + ' px-4 py-2 rounded-xl font-medium">' + cfg.label + '</span></div></div>';
+                }
+            }
+            html += '</div>';
+
+            // 展开/收起按钮
+            if (totalCount > INITIAL_COUNT) {
+                var remaining = totalCount - displayCount;
+                var btnText = isExpanded ? '收起记录' : '展开更多 (' + remaining + ')';
+                var btnIcon = isExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down';
+                html += '<button onclick="toggleReportList(\'' + containerId + '\')" class="w-full mt-3 py-2 flex items-center justify-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors"><iconify-icon icon="' + btnIcon + '" width="18"></iconify-icon><span>' + btnText + '</span></button>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        // 展开/收起记录列表
+        function toggleReportList(containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            var isExpanded = container.getAttribute('data-expanded') === 'true';
+            container.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
+            renderPatientReports(containerId);
+        }
+
+        renderPatientReports('patient-recent-reports');
+        renderPatientReports('patient-recent-reports-desktop');
+    </script>
+</body>
+</html>

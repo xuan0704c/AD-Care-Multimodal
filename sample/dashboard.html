@@ -7,8 +7,12 @@
     <script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
     <script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
     <style>
-        body { background-color: #f8fafc; }
-        .app-container {
+        body { 
+            background-color: #f8fafc; 
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .app-container-mobile {
             width: 375px;
             height: 812px;
             background: #f8fafc;
@@ -16,6 +20,11 @@
             overflow: hidden;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             margin: 20px auto;
+        }
+        .app-container-desktop {
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
         }
         .scroll-container::-webkit-scrollbar { display: none; }
         .fade-in {
@@ -25,22 +34,6 @@
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .pulse-ring {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid rgba(37, 99, 235, 0.3);
-            animation: pulseRing 2s ease-out infinite;
-        }
-        @keyframes pulseRing {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
-        }
-        .desktop-only { display: none; }
         .slide-up {
             animation: slideUp 0.5s ease-out;
         }
@@ -48,191 +41,201 @@
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* 桌面端样式 */
         @media (min-width: 768px) {
-            .mobile-only { display: none !important; }
-            .desktop-only { display: block !important; }
+            .mobile-only {
+                display: none !important;
+            }
+            .desktop-only {
+                display: block !important;
+            }
         }
+        
+        /* 移动端样式 */
         @media (max-width: 767px) {
-            .mobile-only { display: block !important; }
-            .desktop-only { display: none !important; }
+            .mobile-only {
+                display: block !important;
+            }
+            .desktop-only {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body>
     <!-- 移动端布局 -->
-    <div class="mobile-only flex items-center justify-center min-h-screen">
-        <div class="app-container flex flex-col">
-            <!-- 顶部状态栏 -->
-            <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs font-bold bg-white">
-                <span id="clock">09:41</span>
-                <div class="flex gap-1">
-                    <iconify-icon class="text-gray-800" icon="mdi:signal"></iconify-icon>
-                    <iconify-icon class="text-gray-800" icon="mdi:wifi"></iconify-icon>
-                    <iconify-icon class="text-gray-800" icon="mdi:battery"></iconify-icon>
+    <div class="app-container-mobile mobile-only">
+        <!-- 顶部状态栏 -->
+        <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs font-bold bg-white">
+            <span id="clock">09:41</span>
+            <div class="flex gap-1">
+                <iconify-icon class="text-gray-800" icon="mdi:signal"></iconify-icon>
+                <iconify-icon class="text-gray-800" icon="mdi:wifi"></iconify-icon>
+                <iconify-icon class="text-gray-800" icon="mdi:battery"></iconify-icon>
+            </div>
+        </div>
+
+        <!-- 顶部欢迎栏 -->
+        <div class="px-5 py-4 bg-white shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs text-gray-400">欢迎回来</p>
+                <h1 class="text-xl font-bold text-gray-800" id="welcome-name">李医生</h1>
+            </div>
+            <div class="flex gap-4 text-gray-600">
+                <iconify-icon icon="mdi:magnify" width="24"></iconify-icon>
+                <iconify-icon class="relative" icon="mdi:bell-outline" width="24">
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                </iconify-icon>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 overflow-y-auto scroll-container p-4 space-y-5 pb-24 fade-in">
+            <!-- 数据看板 -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <p class="text-[10px] text-blue-600 font-medium mb-1">今日筛查</p>
+                    <p class="text-xl font-bold text-blue-900" id="today-count">12</p>
+                </div>
+                <div class="bg-red-50 p-3 rounded-xl border border-red-100">
+                    <p class="text-[10px] text-red-600 font-medium mb-1">高风险预警</p>
+                    <p class="text-xl font-bold text-red-900" id="risk-count">03</p>
+                </div>
+                <div class="bg-green-50 p-3 rounded-xl border border-green-100">
+                    <p class="text-[10px] text-green-600 font-medium mb-1">社区总覆盖</p>
+                    <p class="text-xl font-bold text-green-900">156</p>
                 </div>
             </div>
 
-            <!-- 顶部欢迎栏 -->
-            <div class="px-5 py-4 bg-white shadow-sm flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-gray-400">欢迎回来</p>
-                    <h1 class="text-xl font-bold text-gray-800" id="welcome-name">李医生</h1>
-                </div>
-                <div class="flex gap-4 text-gray-600">
-                    <iconify-icon icon="mdi:magnify" width="24"></iconify-icon>
-                    <iconify-icon class="relative" icon="mdi:bell-outline" width="24">
-                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                    </iconify-icon>
+            <!-- AD-Care 评估系统入口 -->
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div class="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <iconify-icon class="text-white text-xl" icon="mdi:brain"></iconify-icon>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-lg">AD-Care 评估系统</h2>
+                            <p class="text-blue-100 text-[10px]">多模态认知评估 · 早期筛查</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-blue-100 leading-relaxed mb-4">
+                        基于面部视频、语音音频、交互行为和手写轨迹的多模态数据采集，对认知功能进行客观全面评估。
+                    </p>
+                    <button onclick="enterAssessment()" class="flex items-center justify-center gap-2 w-full bg-white text-blue-700 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors shadow-md">
+                        <iconify-icon icon="mdi:play-circle" width="20"></iconify-icon>
+                        进入评估系统
+                    </button>
                 </div>
             </div>
 
-            <!-- 主内容区 -->
-            <div class="flex-1 overflow-y-auto scroll-container p-4 space-y-5 pb-24 fade-in">
-                <!-- 数据看板 -->
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                        <p class="text-[10px] text-blue-600 font-medium mb-1">今日筛查</p>
-                        <p class="text-xl font-bold text-blue-900" id="today-count">12</p>
-                    </div>
-                    <div class="bg-red-50 p-3 rounded-xl border border-red-100">
-                        <p class="text-[10px] text-red-600 font-medium mb-1">高风险预警</p>
-                        <p class="text-xl font-bold text-red-900" id="risk-count">03</p>
-                    </div>
-                    <div class="bg-green-50 p-3 rounded-xl border border-green-100">
-                        <p class="text-[10px] text-green-600 font-medium mb-1">社区总覆盖</p>
-                        <p class="text-xl font-bold text-green-900">156</p>
-                    </div>
+            <!-- 快捷功能入口 -->
+            <div>
+                <h3 class="text-sm font-bold text-gray-800 mb-3">快捷功能</h3>
+                <div class="grid grid-cols-4 gap-3">
+                    <a href="patients.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                            <iconify-icon icon="mdi:account-group" width="20"></iconify-icon>
+                        </div>
+                        <span class="text-[10px] text-gray-600 font-medium">患者管理</span>
+                    </a>
+                    <a href="../sample/guidance.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
+                            <iconify-icon icon="mdi:clipboard-list" width="20"></iconify-icon>
+                        </div>
+                        <span class="text-[10px] text-gray-600 font-medium">采集指引</span>
+                    </a>
+                    <a href="report.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
+                            <iconify-icon icon="mdi:file-chart" width="20"></iconify-icon>
+                        </div>
+                        <span class="text-[10px] text-gray-600 font-medium">报告查询</span>
+                    </a>
+                    <a href="../sample/realtime.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center text-red-600">
+                            <iconify-icon icon="mdi:monitor-eye" width="20"></iconify-icon>
+                        </div>
+                        <span class="text-[10px] text-gray-600 font-medium">实时监测</span>
+                    </a>
                 </div>
+            </div>
 
-                <!-- AD-Care 评估系统入口 -->
-                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                    <div class="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-                    <div class="relative z-10">
-                        <div class="flex items-center gap-2 mb-2">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                                <iconify-icon class="text-white text-xl" icon="mdi:brain"></iconify-icon>
+            <!-- 待筛查患者 -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-bold text-gray-800">今日待筛查</h3>
+                    <a href="patients.html" class="text-xs text-blue-600">查看全部</a>
+                </div>
+                <div class="space-y-3">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
+                                王
                             </div>
                             <div>
-                                <h2 class="font-bold text-lg">AD-Care 评估系统</h2>
-                                <p class="text-blue-100 text-[10px]">多模态认知评估 · 早期筛查</p>
+                                <h4 class="font-bold text-gray-800 text-sm">王德发 <span class="text-xs font-normal text-gray-500">78岁 · 男</span></h4>
+                                <p class="text-[10px] text-gray-400">房号：2号楼-402 · 高风险预警</p>
                             </div>
                         </div>
-                        <p class="text-xs text-blue-100 leading-relaxed mb-4">
-                            基于面部视频、语音音频、交互行为和手写轨迹的多模态数据采集，对认知功能进行客观全面评估。
-                        </p>
-                        <button onclick="enterAssessment()" class="flex items-center justify-center gap-2 w-full bg-white text-blue-700 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors shadow-md">
-                            <iconify-icon icon="mdi:play-circle" width="20"></iconify-icon>
-                            进入评估系统
+                        <button onclick="enterAssessment()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
+                            开始评估
+                        </button>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-sm">
+                                陈
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">陈秀兰 <span class="text-xs font-normal text-gray-500">75岁 · 女</span></h4>
+                                <p class="text-[10px] text-gray-400">房号：8号楼-203 · 今日待筛查</p>
+                            </div>
+                        </div>
+                        <button onclick="enterAssessment()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
+                            开始评估
                         </button>
                     </div>
                 </div>
-
-                <!-- 快捷功能入口 -->
-                <div>
-                    <h3 class="text-sm font-bold text-gray-800 mb-3">快捷功能</h3>
-                    <div class="grid grid-cols-4 gap-3">
-                        <a href="patients.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                            <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                                <iconify-icon icon="mdi:account-group" width="20"></iconify-icon>
-                            </div>
-                            <span class="text-[10px] text-gray-600 font-medium">患者管理</span>
-                        </a>
-                        <a href="guidance.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                            <div class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
-                                <iconify-icon icon="mdi:clipboard-list" width="20"></iconify-icon>
-                            </div>
-                            <span class="text-[10px] text-gray-600 font-medium">采集指引</span>
-                        </a>
-                        <a href="report.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                            <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
-                                <iconify-icon icon="mdi:file-chart" width="20"></iconify-icon>
-                            </div>
-                            <span class="text-[10px] text-gray-600 font-medium">报告查询</span>
-                        </a>
-                        <a href="realtime.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                            <div class="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center text-red-600">
-                                <iconify-icon icon="mdi:monitor-eye" width="20"></iconify-icon>
-                            </div>
-                            <span class="text-[10px] text-gray-600 font-medium">实时监测</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- 待筛查患者 -->
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-bold text-gray-800">今日待筛查</h3>
-                        <a href="patients.html" class="text-xs text-blue-600">查看全部</a>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
-                                    王
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-800 text-sm">王德发 <span class="text-xs font-normal text-gray-500">78岁 · 男</span></h4>
-                                    <p class="text-[10px] text-gray-400">房号：2号楼-402 · 高风险预警</p>
-                                </div>
-                            </div>
-                            <button onclick="enterAssessment()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
-                                开始评估
-                            </button>
-                        </div>
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-sm">
-                                    陈
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-800 text-sm">陈秀兰 <span class="text-xs font-normal text-gray-500">75岁 · 女</span></h4>
-                                    <p class="text-[10px] text-gray-400">房号：8号楼-203 · 今日待筛查</p>
-                                </div>
-                            </div>
-                            <button onclick="enterAssessment()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
-                                开始评估
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 最近评估记录 -->
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-bold text-gray-800">最近评估记录</h3>
-                        <a href="report.html" class="text-xs text-blue-600">查看全部</a>
-                    </div>
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" id="recent-reports">
-                        <!-- 动态渲染 -->
-                    </div>
-                </div>
             </div>
 
-            <!-- 底部导航栏 -->
-            <div class="absolute bottom-0 left-0 right-0 bg-white h-20 border-t border-gray-100 flex items-center justify-around pb-4">
-                <div class="flex flex-col items-center text-blue-600">
-                    <iconify-icon icon="mdi:home" width="24"></iconify-icon>
-                    <span class="text-[10px] mt-1 font-bold">工作台</span>
+            <!-- 最近评估记录 -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-bold text-gray-800">最近评估记录</h3>
+                    <a href="report.html" class="text-xs text-blue-600">查看全部</a>
                 </div>
-                <a href="patients.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
-                    <iconify-icon icon="mdi:account-group" width="24"></iconify-icon>
-                    <span class="text-[10px] mt-1">患者列表</span>
-                </a>
-                <a href="realtime.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
-                    <iconify-icon icon="mdi:monitor-eye" width="24"></iconify-icon>
-                    <span class="text-[10px] mt-1">实时监测</span>
-                </a>
-                <a href="profile.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
-                    <iconify-icon icon="mdi:account" width="24"></iconify-icon>
-                    <span class="text-[10px] mt-1">我的</span>
-                </a>
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" id="recent-reports">
+                    <!-- 动态渲染 -->
+                </div>
             </div>
+        </div>
+
+        <!-- 底部导航栏 -->
+        <div class="absolute bottom-0 left-0 right-0 bg-white h-20 border-t border-gray-100 flex items-center justify-around pb-4">
+            <div class="flex flex-col items-center text-blue-600">
+                <iconify-icon icon="mdi:home" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1 font-bold">工作台</span>
+            </div>
+            <a href="patients.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                <iconify-icon icon="mdi:account-group" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1">患者列表</span>
+            </a>
+            <a href="../sample/realtime.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                <iconify-icon icon="mdi:monitor-eye" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1">实时监测</span>
+            </a>
+            <a href="profile.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                <iconify-icon icon="mdi:account" width="24"></iconify-icon>
+                <span class="text-[10px] mt-1">我的</span>
+            </a>
         </div>
     </div>
 
     <!-- 桌面端布局 -->
-    <div class="desktop-only" style="min-height: 100vh; padding: 20px; box-sizing: border-box;">
+    <div class="app-container-desktop desktop-only">
         <div class="max-w-7xl mx-auto">
             <!-- 顶部导航 -->
             <header class="bg-white rounded-2xl shadow-lg p-6 mb-6 slide-up">
@@ -344,7 +347,7 @@
                                     <iconify-icon icon="mdi:play-circle" width="24"></iconify-icon>
                                     开始评估
                                 </button>
-                                <a href="guidance.html" class="flex items-center gap-2 bg-white/20 text-white px-8 py-4 rounded-xl font-medium hover:bg-white/30 transition-all">
+                                <a href="../sample/guidance.html" class="flex items-center gap-2 bg-white/20 text-white px-8 py-4 rounded-xl font-medium hover:bg-white/30 transition-all">
                                     <iconify-icon icon="mdi:book-open" width="24"></iconify-icon>
                                     采集指引
                                 </a>
@@ -443,7 +446,7 @@
                                 </div>
                                 <span class="text-sm font-medium text-gray-700 mt-2">报告查询</span>
                             </a>
-                            <a href="realtime.html" class="flex flex-col items-center p-4 bg-gray-50 rounded-xl hover:bg-orange-50 hover:shadow-md transition-all group">
+                            <a href="../sample/realtime.html" class="flex flex-col items-center p-4 bg-gray-50 rounded-xl hover:bg-orange-50 hover:shadow-md transition-all group">
                                 <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
                                     <iconify-icon icon="mdi:monitor-eye" width="24"></iconify-icon>
                                 </div>
@@ -521,11 +524,6 @@
     </div>
 
     <script>
-        // 角色检查
-        if (sessionStorage.getItem('user_role') !== 'staff') {
-            window.location.href = 'login.html';
-        }
-
         // 登录状态检查
         if (sessionStorage.getItem('portal_logged_in') !== 'true') {
             window.location.href = 'login.html';
@@ -536,7 +534,7 @@
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('clock').textContent = `${hours}:${minutes}`;
+            document.getElementById('clock')?.textContent = `${hours}:${minutes}`;
         }
         updateDateTime();
         setInterval(updateDateTime, 60000);
@@ -544,11 +542,9 @@
         // 显示已保存的用户名
         const savedUsername = localStorage.getItem('portal_username');
         if (savedUsername) {
-            document.getElementById('welcome-name').textContent = savedUsername + '医生';
-            const welcomeNameDesktop = document.getElementById('welcome-name-desktop');
-            if (welcomeNameDesktop) welcomeNameDesktop.textContent = savedUsername + '医生';
-            const userInitial = document.getElementById('user-initial');
-            if (userInitial) userInitial.textContent = savedUsername.charAt(0);
+            document.getElementById('welcome-name')?.textContent = savedUsername + '医生';
+            document.getElementById('welcome-name-desktop')?.textContent = savedUsername + '医生';
+            document.getElementById('user-initial')?.textContent = savedUsername.charAt(0);
         }
 
         // 进入评估系统前清除准备阶段标记，确保重新经过准备流程
@@ -562,10 +558,9 @@
             window.location.href = '../index.html';
         }
 
-        // 渲染最近评估记录
+        // 渲染最近评估记录（移动端）
         function renderRecentReports(containerId) {
             const container = document.getElementById(containerId);
-            if (!container) return;
             const SESSION_PREFIX = 'adcare_session_';
             const reports = [];
 
@@ -654,9 +649,6 @@
 
         renderRecentReports('recent-reports');
         renderRecentReports('recent-reports-desktop');
-
-        // 个人中心
-        // 点击"我的"跳转到个人中心页面
     </script>
 </body>
 </html>

@@ -17,6 +17,20 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             margin: 20px auto;
         }
+        @media (min-width: 768px) {
+            .app-container {
+                width: 100%;
+                max-width: 900px;
+                height: auto;
+                min-height: 100vh;
+                border-radius: 0;
+                margin: 0 auto;
+            }
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 20px;
+            }
+        }
         .scroll-container::-webkit-scrollbar { display: none; }
         .modal-overlay {
             position: absolute;
@@ -137,8 +151,8 @@
     </div>
 
     <script>
-        // 登录状态检查
-        if (sessionStorage.getItem('portal_logged_in') !== 'true') {
+        // 登录状态与角色检查
+        if (sessionStorage.getItem('portal_logged_in') !== 'true' || sessionStorage.getItem('user_role') !== 'staff') {
             window.location.href = 'login.html';
         }
 
