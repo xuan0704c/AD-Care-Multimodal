@@ -1102,6 +1102,7 @@
             async startAssessment() {
                 sessionStorage.setItem('preparationCompleted', 'true');
                 this.showScreen('assessment');
+                this.pausedRecordingTime = 0;
                 await this.mediaRecorder.startRecording();
                 this.startRecordingTimer();
                 this.isRecording = true;
@@ -1122,8 +1123,9 @@
 
             startRecordingTimer() {
                 this.recordingStartTime = Date.now();
+                const savedTime = this.pausedRecordingTime || 0;
                 this.recordingInterval = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                    const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000) + savedTime;
                     const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
                     const seconds = (elapsed % 60).toString().padStart(2, '0');
                     document.getElementById('recording-time').textContent = `${minutes}:${seconds}`;
@@ -1223,21 +1225,43 @@
 
             async confirmExit() {
                 this.hideExitModal();
-                try {
-                    await this.stopAssessment();
-                } catch (e) {
-                    console.warn('Stop assessment failed:', e);
+                this.isRecording = false;
+                clearInterval(this.recordingInterval);
+                
+                // 保存当前录制时间
+                if (this.recordingStartTime) {
+                    const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                    this.pausedRecordingTime = (this.pausedRecordingTime || 0) + elapsed;
                 }
+                
+                try {
+                    await this.mediaRecorder.pauseRecording();
+                } catch (e) {
+                    console.warn('Pause recording failed:', e);
+                }
+                this.dataLogger.logEvent('assessment_exit', {});
+                this.updateResultSummary();
                 this.showScreen('result');
             }
 
-            quitAssessment() {
+            async quitAssessment() {
                 document.getElementById('pause-modal').classList.remove('active');
-                try {
-                    this.stopAssessment();
-                } catch (e) {
-                    console.warn('Stop assessment failed:', e);
+                this.isRecording = false;
+                clearInterval(this.recordingInterval);
+                
+                // 保存当前录制时间
+                if (this.recordingStartTime) {
+                    const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                    this.pausedRecordingTime = (this.pausedRecordingTime || 0) + elapsed;
                 }
+                
+                try {
+                    await this.mediaRecorder.pauseRecording();
+                } catch (e) {
+                    console.warn('Pause recording failed:', e);
+                }
+                this.dataLogger.logEvent('assessment_quit', {});
+                this.updateResultSummary();
                 this.showScreen('result');
             }
 
@@ -1250,7 +1274,10 @@
             }
 
             updateResultSummary() {
-                const duration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                let duration = this.pausedRecordingTime || 0;
+                if (this.recordingStartTime && this.isRecording) {
+                    duration += Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                }
                 const minutes = Math.floor(duration / 60);
                 const seconds = duration % 60;
                 document.getElementById('total-time').textContent = `${minutes}分${seconds}秒`;
@@ -1285,8 +1312,11 @@
                 this.updatePatientStatusAfterAssessment();
             }
 
-            resumeFromResult() {
+            async resumeFromResult() {
                 this.showScreen('assessment');
+                await this.mediaRecorder.resumeRecording();
+                this.isRecording = true;
+                this.startRecordingTimer();
                 this.dataLogger.logEvent('assessment_resumed_from_result', {});
             }
 
