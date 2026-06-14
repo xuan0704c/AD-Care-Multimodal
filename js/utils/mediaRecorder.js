@@ -274,6 +274,71 @@ class MediaRecorder {
         return new Blob([view], { type: 'audio/wav' });
     }
 
+    async pauseRecording() {
+        this.isRecording = false;
+        
+        if (this.segmentTimer) {
+            clearInterval(this.segmentTimer);
+            this.segmentTimer = null;
+        }
+        
+        await this.saveSegment();
+        
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            this.mediaRecorder.stop();
+        }
+        
+        if (this.audioMediaRecorder && this.audioMediaRecorder.state !== 'inactive') {
+            this.audioMediaRecorder.stop();
+        }
+    }
+
+    async resumeRecording() {
+        if (this.isRecording) return;
+        
+        this.isRecording = true;
+        this.recordedChunks = [];
+        
+        if (this.videoStream) {
+            const options = {
+                mimeType: 'video/webm;codecs=vp8',
+                videoBitsPerSecond: 500000
+            };
+            this.mediaRecorder = new window.MediaRecorder(this.videoStream, options);
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.recordedChunks.push(event.data);
+                }
+            };
+            this.mediaRecorder.start(1000);
+        }
+        
+        if (this.audioStream) {
+            const audioMimeTypes = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/ogg;codecs=opus'
+            ];
+            let mimeType = '';
+            for (const type of audioMimeTypes) {
+                if (window.MediaRecorder.isTypeSupported(type)) {
+                    mimeType = type;
+                    break;
+                }
+            }
+            const options = mimeType ? { mimeType } : {};
+            this.audioMediaRecorder = new window.MediaRecorder(this.audioStream, options);
+            this.audioMediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+            this.audioMediaRecorder.start(1000);
+        }
+        
+        this.segmentTimer = setInterval(() => this.saveSegment(), this.segmentInterval);
+    }
+
     async stopRecording() {
         this.isRecording = false;
         
