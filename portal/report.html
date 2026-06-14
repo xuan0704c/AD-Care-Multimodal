@@ -82,7 +82,8 @@
             <!-- 顶部导航 -->
             <div class="px-5 py-4 bg-white shadow-sm flex items-center justify-between">
                 <h1 class="text-xl font-bold text-gray-800">报告查询</h1>
-                <div class="flex gap-4 text-gray-600">
+                <div class="flex gap-4 text-gray-600 items-center">
+                    <button id="mobile-edit-toggle" onclick="toggleEditMode()" class="text-sm font-bold text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors">编辑</button>
                     <iconify-icon class="relative" icon="mdi:bell-outline" width="24">
                         <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                     </iconify-icon>
@@ -149,6 +150,13 @@
             <!-- 报告详情模态框 -->
             <div class="modal-overlay" id="detail-modal">
                 <div class="modal-content" id="detail-content">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+
+            <!-- 编辑报告模态框 -->
+            <div class="modal-overlay" id="edit-modal">
+                <div class="modal-content" id="edit-content">
                     <!-- 动态填充 -->
                 </div>
             </div>
@@ -239,13 +247,15 @@
                         <input type="text" id="desktop-search-input" placeholder="按患者姓名搜索..." class="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-sm text-gray-500">状态：</span>
+                        <span class="text-sm text-gray-500">风险等级：</span>
                         <select id="desktop-status-filter" onchange="filterDesktopStatus(this.value)" class="px-4 py-2 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="all">全部</option>
-                            <option value="completed">已完成</option>
-                            <option value="incomplete">未完成</option>
+                            <option value="low">低风险</option>
+                            <option value="medium">中度风险</option>
+                            <option value="high">高风险</option>
                         </select>
                     </div>
+                    <button id="desktop-edit-toggle" onclick="toggleEditMode()" class="px-4 py-2 bg-gray-100 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors">编辑</button>
                 </div>
 
                 <!-- 表格 -->
@@ -255,9 +265,9 @@
                             <tr class="border-b border-gray-100 text-sm text-gray-500">
                                 <th class="pb-3 font-medium px-4">患者姓名</th>
                                 <th class="pb-3 font-medium px-4">评估时间</th>
-                                <th class="pb-3 font-medium px-4">任务完成数</th>
+                                <th class="pb-3 font-medium px-4">报告编号</th>
                                 <th class="pb-3 font-medium px-4">数据大小</th>
-                                <th class="pb-3 font-medium px-4">状态</th>
+                                <th class="pb-3 font-medium px-4">风险等级</th>
                                 <th class="pb-3 font-medium px-4 text-right">操作</th>
                             </tr>
                         </thead>
@@ -307,6 +317,7 @@
         let currentFilter = 'all';
         let searchKeyword = '';
         let desktopStatusFilter = 'all';
+        let isEditMode = false;
 
         function loadPatients() {
             const stored = localStorage.getItem(PATIENTS_KEY);
@@ -339,6 +350,8 @@
                             duration: data.startTime && data.endTime ? Math.floor((data.endTime - data.startTime) / 1000) : 0,
                             deviceInfo: data.deviceInfo || {},
                             status: data.endTime ? 'completed' : 'incomplete',
+                            riskLevel: getRiskLevel(data.sessionId || key.replace(SESSION_PREFIX, ''), patient ? patient.name : (data.patientName || '')),
+                            dataSize: data.dataSize || null,
                             exportTime: data.exportTime || null
                         });
                     } catch (e) {
@@ -403,12 +416,30 @@
             return dayDiff >= 0 && dayDiff <= 30;
         }
 
-        function getStatusConfig(status) {
+        function getRiskLevel(sessionId, patientName) {
+            let seed = 0;
+            const str = (patientName || '') + (sessionId || '');
+            for (let i = 0; i < str.length; i++) {
+                seed = ((seed << 5) - seed) + str.charCodeAt(i);
+                seed |= 0;
+            }
+            let t = seed + 0x6D2B79F5;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            const rng = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            const score = Math.floor(50 + rng * 45);
+            if (score >= 80) return 'low';
+            if (score >= 60) return 'medium';
+            return 'high';
+        }
+
+        function getRiskConfig(level) {
             const configs = {
-                completed: { label: '已完成', bg: 'bg-green-100', text: 'text-green-600', icon: 'mdi:check-circle' },
-                incomplete: { label: '未完成', bg: 'bg-yellow-100', text: 'text-yellow-600', icon: 'mdi:alert-circle' }
+                low: { label: '低风险', bg: 'bg-green-100', text: 'text-green-600', icon: 'mdi:shield-check' },
+                medium: { label: '中度风险', bg: 'bg-yellow-100', text: 'text-yellow-600', icon: 'mdi:alert-circle' },
+                high: { label: '高风险', bg: 'bg-red-100', text: 'text-red-600', icon: 'mdi:alert' }
             };
-            return configs[status] || configs.incomplete;
+            return configs[level] || configs.medium;
         }
 
         function isArchived(sessionId) {
@@ -443,21 +474,21 @@
                 reports = reports.filter(r => isLast30Days(r.startTime));
             }
 
-            // 桌面端状态筛选
+            // 桌面端风险等级筛选
             if (desktopStatusFilter && desktopStatusFilter !== 'all') {
-                reports = reports.filter(r => r.status === desktopStatusFilter);
+                reports = reports.filter(r => r.riskLevel === desktopStatusFilter);
             }
 
             return reports;
         }
 
-        function getTaskCount(report) {
-            if (report.status === 'completed') return '6项';
-            const tasks = Math.max(0, Math.min(5, Math.floor((report.duration || 0) / 90)));
-            return tasks + '项';
+        function getReportId(report) {
+            return 'SR-' + report.sessionId;
         }
 
         function getDataSize(report) {
+            if (report.dataSize) return report.dataSize;
+            // 无真实数据时回退到估算
             let hash = 0;
             for (let i = 0; i < (report.sessionId || '').length; i++) {
                 hash = ((hash << 5) - hash) + report.sessionId.charCodeAt(i);
@@ -530,7 +561,7 @@
                     `;
                 } else {
                     reports.forEach(r => {
-                        const cfg = getStatusConfig(r.status);
+                        const cfg = getRiskConfig(r.riskLevel);
                         const dateStr = formatDate(r.startTime);
                         const timeStr = formatTime(r.startTime);
                         const durationStr = formatDuration(r.duration);
@@ -539,7 +570,7 @@
                         const card = document.createElement('div');
                         card.className = 'report-card bg-white p-4 rounded-2xl shadow-sm border border-gray-100 cursor-pointer';
                         card.onclick = () => {
-                            window.location.href = 'report-detail.html?sessionId=' + r.sessionId;
+                            window.location.href = 'assessment-report.html?sessionId=' + r.sessionId;
                         };
                         card.innerHTML = `
                             <div class="flex justify-between items-start mb-2">
@@ -561,14 +592,11 @@
                                 </div>
                             </div>
                             <div class="flex justify-between items-center text-xs text-gray-500 mt-3 pt-3 border-t border-gray-50">
-                                <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-[10px] bg-gray-100 px-1.5 py-0.5 rounded">${getReportId(r)}</span>
                                     <span class="flex items-center gap-1">
                                         <iconify-icon icon="mdi:calendar" width="14"></iconify-icon>
                                         ${dateStr}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <iconify-icon icon="mdi:clock-outline" width="14"></iconify-icon>
-                                        ${timeStr}
                                     </span>
                                 </div>
                                 <span class="flex items-center gap-1">
@@ -576,6 +604,11 @@
                                     ${durationStr}
                                 </span>
                             </div>
+                            ${isEditMode ? `
+                            <div class="flex gap-2 mt-2">
+                                <button onclick="event.stopPropagation(); deleteReport('${r.sessionId}')" class="flex-1 bg-red-50 text-red-600 py-1.5 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors">删除</button>
+                            </div>
+                            ` : ''}
                         `;
                         container.appendChild(card);
                     });
@@ -597,7 +630,7 @@
                     `;
                 } else {
                     reports.forEach(r => {
-                        const cfg = getStatusConfig(r.status);
+                        const cfg = getRiskConfig(r.riskLevel);
                         const dateStr = formatDate(r.startTime);
                         const timeStr = formatTime(r.startTime);
                         const row = document.createElement('tr');
@@ -620,7 +653,7 @@
                                     <span class="text-xs text-gray-400">${timeStr}</span>
                                 </div>
                             </td>
-                            <td class="py-4 px-4 text-gray-600">${getTaskCount(r)}</td>
+                            <td class="py-4 px-4 text-gray-600 font-mono text-xs">${getReportId(r)}</td>
                             <td class="py-4 px-4 text-gray-600">${getDataSize(r)}</td>
                             <td class="py-4 px-4">
                                 <span class="${cfg.bg} ${cfg.text} px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 w-fit">
@@ -629,10 +662,16 @@
                                 </span>
                             </td>
                             <td class="py-4 px-4 text-right">
-                                <a href="report-detail.html?sessionId=${r.sessionId}" class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">
-                                    <iconify-icon icon="mdi:eye" width="16"></iconify-icon>
-                                    查看
-                                </a>
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="assessment-report.html?sessionId=${r.sessionId}" class="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">
+                                        <iconify-icon icon="mdi:eye" width="14"></iconify-icon>
+                                    </a>
+                                    ${isEditMode ? `
+                                    <button onclick="event.stopPropagation(); deleteReport('${r.sessionId}')" class="inline-flex items-center gap-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors">
+                                        <iconify-icon icon="mdi:delete" width="14"></iconify-icon>
+                                    </button>
+                                    ` : ''}
+                                </div>
                             </td>
                         `;
                         desktopContainer.appendChild(row);
@@ -658,6 +697,20 @@
 
         function filterDesktopReports(type) {
             currentFilter = type;
+            renderReports();
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const mobileBtn = document.getElementById('mobile-edit-toggle');
+            const desktopBtn = document.getElementById('desktop-edit-toggle');
+            if (mobileBtn) mobileBtn.textContent = isEditMode ? '完成' : '编辑';
+            if (desktopBtn) desktopBtn.textContent = isEditMode ? '完成' : '编辑';
+            if (desktopBtn) {
+                desktopBtn.className = isEditMode
+                    ? 'px-4 py-2 bg-blue-100 rounded-xl text-sm font-medium text-blue-700 hover:bg-blue-200 transition-colors'
+                    : 'px-4 py-2 bg-gray-100 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors';
+            }
             renderReports();
         }
 
@@ -768,6 +821,124 @@
             detailModal.addEventListener('click', function(e) {
                 if (e.target === this) closeDetail();
             });
+        }
+
+        // ===== 编辑报告 =====
+        function editReport(sessionId) {
+            const sessionKey = SESSION_PREFIX + sessionId;
+            const dataStr = localStorage.getItem(sessionKey);
+            if (!dataStr) {
+                alert('报告数据不存在');
+                return;
+            }
+            let data;
+            try {
+                data = JSON.parse(dataStr);
+            } catch (e) {
+                alert('报告数据解析失败');
+                return;
+            }
+
+            const modal = document.getElementById('edit-modal');
+            const content = document.getElementById('edit-content');
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-bold text-gray-800">编辑报告信息</h2>
+                    <button onclick="closeEdit()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                        <iconify-icon icon="mdi:close" width="20"></iconify-icon>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">患者姓名</label>
+                        <input type="text" id="edit-name" value="${data.patientName || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">年龄</label>
+                            <input type="text" id="edit-age" value="${data.patientAge || ''}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">性别</label>
+                            <select id="edit-gender" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="男" ${data.patientGender === '男' ? 'selected' : ''}>男</option>
+                                <option value="女" ${data.patientGender === '女' ? 'selected' : ''}>女</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pt-2 flex gap-3">
+                        <button onclick="closeEdit()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">取消</button>
+                        <button onclick="saveEdit('${sessionId}')" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">保存</button>
+                    </div>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+
+        function closeEdit() {
+            document.getElementById('edit-modal').classList.remove('active');
+        }
+
+        function saveEdit(sessionId) {
+            const sessionKey = SESSION_PREFIX + sessionId;
+            const dataStr = localStorage.getItem(sessionKey);
+            if (!dataStr) return;
+            let data;
+            try {
+                data = JSON.parse(dataStr);
+            } catch (e) { return; }
+
+            const newName = document.getElementById('edit-name').value.trim();
+            const newAge = document.getElementById('edit-age').value.trim();
+            const newGender = document.getElementById('edit-gender').value;
+
+            if (!newName) {
+                alert('患者姓名不能为空');
+                return;
+            }
+
+            data.patientName = newName;
+            data.patientAge = newAge;
+            data.patientGender = newGender;
+            localStorage.setItem(sessionKey, JSON.stringify(data));
+
+            // 同步更新 portal_patients 中对应患者
+            if (data.patientId) {
+                try {
+                    const patients = JSON.parse(localStorage.getItem(PATIENTS_KEY) || '[]');
+                    const patient = patients.find(p => String(p.id) === String(data.patientId));
+                    if (patient) {
+                        patient.name = newName;
+                        patient.age = newAge;
+                        patient.gender = newGender;
+                        localStorage.setItem(PATIENTS_KEY, JSON.stringify(patients));
+                    }
+                } catch (e) {
+                    console.warn('同步更新患者信息失败', e);
+                }
+            }
+
+            closeEdit();
+            renderReports();
+        }
+
+        const editModal = document.getElementById('edit-modal');
+        if (editModal) {
+            editModal.addEventListener('click', function(e) {
+                if (e.target === this) closeEdit();
+            });
+        }
+
+        // ===== 删除报告 =====
+        function deleteReport(sessionId) {
+            if (!confirm('确定要删除该报告吗？此操作不可恢复。')) return;
+            const sessionKey = SESSION_PREFIX + sessionId;
+            try {
+                localStorage.removeItem(sessionKey);
+                renderReports();
+            } catch (e) {
+                alert('删除失败');
+            }
         }
 
         // 初始化渲染

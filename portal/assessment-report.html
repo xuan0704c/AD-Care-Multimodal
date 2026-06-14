@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>筛查报告 - 智慧忆护</title>
+    <script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+    <script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+    <script src="https://modao.cc/agent-py/static/source/js/echarts.min.5.4.3.js"></script>
+    <style>
+        body { background-color: #f8fafc; }
+        .app-container {
+            width: 375px;
+            height: 812px;
+            background: #f8fafc;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+        }
+        .scroll-container::-webkit-scrollbar { display: none; }
+        .desktop-only { display: none; }
+        @media (min-width: 768px) {
+            .app-container {
+                width: 100%;
+                max-width: 900px;
+                height: auto;
+                min-height: 100vh;
+                border-radius: 0;
+                margin: 0 auto;
+            }
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 20px;
+            }
+            .mobile-only { display: none !important; }
+            .desktop-only { display: block; }
+        }
+        @media (max-width: 767px) {
+            .mobile-only { display: block !important; }
+            .desktop-only { display: none !important; }
+        }
+        /* 移动端模态框 */
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-overlay.active { display: flex; }
+    </style>
+</head>
+<body>
+    <!-- 无数据提示 -->
+    <div id="no-data-tip" style="display:none;position:fixed;inset:0;background:#f8fafc;z-index:100;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;">
+        <iconify-icon icon="mdi:file-document-alert-outline" width="64" class="text-gray-300 mb-4"></iconify-icon>
+        <h2 class="text-xl font-bold text-gray-700 mb-2">暂无评估报告</h2>
+        <p class="text-sm text-gray-500 mb-6">请先完成全部评估任务后，系统会自动生成报告。</p>
+        <a href="../index.html" id="no-data-back-link" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-colors">前往评估</a>
+    </div>
+
+    <!-- 移动端布局 -->
+    <div class="mobile-only flex items-center justify-center min-h-screen">
+        <div class="app-container flex flex-col">
+            <!-- 顶部状态栏 -->
+            <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs font-bold bg-white">
+                <span id="clock">09:41</span>
+                <div class="flex gap-1">
+                    <iconify-icon class="text-gray-800" icon="mdi:signal"></iconify-icon>
+                    <iconify-icon class="text-gray-800" icon="mdi:wifi"></iconify-icon>
+                    <iconify-icon class="text-gray-800" icon="mdi:battery"></iconify-icon>
+                </div>
+            </div>
+            <!-- 顶部导航 -->
+            <div class="px-5 py-4 bg-white shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <a class="text-gray-600" id="mobile-back-link" href="../index.html">
+                        <iconify-icon icon="mdi:arrow-left" width="24"></iconify-icon>
+                    </a>
+                    <h1 class="text-xl font-bold text-gray-800">筛查报告</h1>
+                </div>
+                <div class="flex gap-4">
+                    <iconify-icon class="text-blue-600" icon="mdi:share-variant-outline" width="24"></iconify-icon>
+                    <iconify-icon class="text-gray-500" icon="mdi:printer-outline" width="24"></iconify-icon>
+                </div>
+            </div>
+            <!-- 滚动内容 -->
+            <div class="flex-1 overflow-y-auto scroll-container p-4 space-y-6" id="mobile-content">
+                <!-- 患者基本信息 -->
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4" id="mobile-patient-card">
+                    <div class="w-16 h-16 rounded-full border-4 border-blue-50 bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xl" id="mobile-avatar">?</div>
+                    <div>
+                        <h2 class="text-lg font-bold" id="mobile-patient-name">-- <span class="text-sm font-normal text-gray-500 ml-1" id="mobile-patient-info">--</span></h2>
+                        <p class="text-xs text-gray-400" id="mobile-report-id">报告编号：--</p>
+                        <p class="text-xs text-gray-400" id="mobile-report-time">采集时间：--</p>
+                    </div>
+                </div>
+                <!-- 核心结论 -->
+                <div id="mobile-risk-card" class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-3xl border border-green-100 relative overflow-hidden">
+                    <div class="absolute -top-4 -right-4 w-24 h-24 bg-green-200/20 rounded-full"></div>
+                    <div class="relative z-10">
+                        <p class="text-sm font-bold text-green-700 mb-1">综合风险评估结果</p>
+                        <div class="flex items-end gap-2 mb-4">
+                            <span class="text-4xl font-black text-green-600" id="mobile-risk-label">--</span>
+                            <span class="text-sm text-green-700/60 pb-1 font-bold" id="mobile-risk-level">--</span>
+                        </div>
+                        <p class="text-xs text-green-800 leading-relaxed bg-white/50 p-3 rounded-xl border border-green-200/50" id="mobile-risk-desc">
+                            --
+                        </p>
+                    </div>
+                </div>
+                <!-- 历史趋势 -->
+                <div class="bg-white p-5 rounded-3xl border border-gray-100">
+                    <h3 class="text-sm font-bold mb-4 flex items-center gap-2">
+                        <iconify-icon class="text-blue-600" icon="mdi:chart-line"></iconify-icon> 认知功能半年趋势对比
+                    </h3>
+                    <div class="w-full h-40" id="mobile-trend-chart"></div>
+                    <p class="text-[10px] text-gray-400 text-center mt-2">* 数据对比自过去 6 次筛查记录</p>
+                </div>
+                <!-- 详细维度拆解 -->
+                <div class="space-y-3">
+                    <h3 class="text-sm font-bold px-1">详细维度拆解</h3>
+                    <div id="mobile-dimensions"></div>
+                </div>
+                <!-- 临床建议 -->
+                <div class="bg-blue-600 p-5 rounded-3xl text-white shadow-xl shadow-blue-200 mb-8">
+                    <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                        <iconify-icon class="text-blue-200" icon="mdi:medical-bag"></iconify-icon> 社区干预及临床建议
+                    </h3>
+                    <ul class="text-xs space-y-2 opacity-90 leading-relaxed" id="mobile-suggestions"></ul>
+                </div>
+                <!-- 底部说明 -->
+                <div class="pb-24 text-center">
+                    <p class="text-[10px] text-gray-400 italic">
+                        报告由智慧忆护 AI 引擎自动生成<br/>
+                        边缘计算平台序列号：<span id="mobile-edge-id">EDGE-CNS-2026-X8</span>
+                    </p>
+                </div>
+            </div>
+            <!-- 底部固定按钮 -->
+            <div class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 h-24 flex items-center gap-3">
+                <button onclick="saveReport()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors">存档记录</button>
+                <button onclick="alert('功能开发中')" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 transition-colors">发送至家属APP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 桌面端布局 -->
+    <div class="desktop-only" style="min-height: 100vh; padding: 20px; box-sizing: border-box;">
+        <div class="mx-auto" style="max-width: 1200px;">
+            <!-- 顶部导航 -->
+            <header class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                            <iconify-icon class="text-white text-2xl" icon="mdi:brain"></iconify-icon>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">智慧忆护</h1>
+                            <p class="text-gray-500 text-sm">筛查报告</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <a href="../index.html" id="desktop-back-link" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors text-gray-700 font-medium">
+                            <iconify-icon icon="mdi:arrow-left" width="18"></iconify-icon>
+                            返回评估系统
+                        </a>
+                        <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold" id="desktop-user-avatar">李</div>
+                            <div>
+                                <p class="font-medium text-gray-800" id="desktop-user-name">李医生</p>
+                                <p class="text-xs text-gray-500">社区健康服务中心</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 患者信息卡片 -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 flex items-center gap-6">
+                <div class="w-20 h-20 rounded-full border-4 border-blue-50 bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-2xl" id="desktop-avatar">?</div>
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-gray-800" id="desktop-patient-name">-- <span class="text-base font-normal text-gray-500" id="desktop-patient-info">--</span></h2>
+                    <div class="flex gap-6 mt-2 text-sm text-gray-500">
+                        <span id="desktop-report-id">报告编号：--</span>
+                        <span id="desktop-report-time">采集时间：--</span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="window.print()" class="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-600">
+                        <iconify-icon icon="mdi:printer-outline" width="18"></iconify-icon>
+                        打印
+                    </button>
+                    <button onclick="saveReport()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium">
+                        <iconify-icon icon="mdi:content-save-outline" width="18"></iconify-icon>
+                        存档记录
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-6 mb-6">
+                <!-- 核心结论 -->
+                <div class="lg:col-span-1">
+                    <div id="desktop-risk-card" class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100 h-full flex flex-col justify-center">
+                        <p class="text-sm font-bold text-green-700 mb-2">综合风险评估结果</p>
+                        <div class="flex items-end gap-2 mb-4">
+                            <span class="text-4xl font-black text-green-600" id="desktop-risk-label">--</span>
+                            <span class="text-sm text-green-700/60 pb-1 font-bold" id="desktop-risk-level">--</span>
+                        </div>
+                        <p class="text-sm text-green-800 leading-relaxed bg-white/50 p-3 rounded-xl border border-green-200/50" id="desktop-risk-desc">--</p>
+                        <div class="mt-4 pt-4 border-t border-green-200/50">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-green-700 font-medium">AI 评估得分</span>
+                                <span class="text-green-800 font-bold" id="desktop-score">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 历史趋势 -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-2xl shadow-lg p-6 h-full">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-gray-800">
+                            <iconify-icon class="text-blue-600" icon="mdi:chart-line"></iconify-icon> 认知功能半年趋势对比
+                        </h3>
+                        <div class="w-full h-56" id="desktop-trend-chart"></div>
+                        <p class="text-xs text-gray-400 text-center mt-2">* 数据对比自过去 6 次筛查记录</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 详细维度拆解 -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <h3 class="text-lg font-bold mb-4 text-gray-800">详细维度拆解</h3>
+                <div class="grid md:grid-cols-3 gap-4" id="desktop-dimensions"></div>
+            </div>
+
+            <!-- 临床建议 -->
+            <div class="bg-blue-600 rounded-2xl shadow-xl shadow-blue-200 p-6 mb-6 text-white">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <iconify-icon class="text-blue-200" icon="mdi:medical-bag"></iconify-icon> 社区干预及临床建议
+                </h3>
+                <ul class="text-sm space-y-3 opacity-90 leading-relaxed" id="desktop-suggestions"></ul>
+            </div>
+
+            <!-- 底部版权 -->
+            <footer class="mt-8 text-center text-gray-400 text-sm">
+                <p>报告由智慧忆护 AI 引擎自动生成 · 边缘计算平台序列号：<span id="desktop-edge-id">EDGE-CNS-2026-X8</span></p>
+                <p class="mt-1">国家老年疾病临床医学研究中心 提供技术支持</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // ===== 模拟数据接口（预留模型对接位置） =====
+        var MockReportAPI = {
+            // 根据患者信息生成随机但合理的评估报告数据
+            generate: function(patientInfo) {
+                var seed = this._hashString(patientInfo && patientInfo.name ? patientInfo.name : 'anonymous');
+                var rng = this._mulberry32(seed + Date.now());
+
+                // 生成总体分数 (50-95)
+                var overallScore = Math.floor(50 + rng() * 45);
+                var riskLevel, riskLabel, riskColor, riskDesc;
+                if (overallScore >= 80) {
+                    riskLevel = 'LEVEL 1';
+                    riskLabel = '低风险';
+                    riskColor = 'green';
+                    riskDesc = '患者各维度认知功能表现良好，AI评估得分为 ' + overallScore + '/100，建议保持当前生活节奏，定期随访即可。';
+                } else if (overallScore >= 60) {
+                    riskLevel = 'LEVEL 2';
+                    riskLabel = '中度风险';
+                    riskColor = 'yellow';
+                    riskDesc = '患者在语音流利度、步态平衡及延迟记忆维度表现出轻微异常倾向。边缘端AI评估得分为 ' + overallScore + '/100，建议在3个月内进行临床神经心理学复核。';
+                } else {
+                    riskLevel = 'LEVEL 3';
+                    riskLabel = '高风险';
+                    riskColor = 'red';
+                    riskDesc = '患者在多个认知维度出现明显异常，语音语义重复及步态不平衡表现突出。边缘端AI评估得分为 ' + overallScore + '/100，建议尽快前往记忆门诊进行系统检查。';
+                }
+
+                // 生成各维度数据
+                var dimensions = [
+                    {
+                        key: 'cognitive',
+                        name: '语音与认知',
+                        icon: 'mdi:microphone',
+                        iconColor: 'purple',
+                        score: Math.min(100, Math.max(40, overallScore + Math.floor(rng() * 20 - 10))),
+                        statusText: overallScore >= 80 ? '正常' : (overallScore >= 60 ? '轻度波动' : '异常'),
+                        statusColor: overallScore >= 80 ? 'green' : (overallScore >= 60 ? 'yellow' : 'red'),
+                        detail: overallScore >= 80
+                            ? '关键词提取成功率 92%，语义表达流畅，无重复现象。'
+                            : (overallScore >= 60
+                                ? '关键词提取成功率 78%，偶有无意义语义重复。'
+                                : '关键词提取成功率 65%，出现多次无意义语义重复。')
+                    },
+                    {
+                        key: 'gait',
+                        name: '步态与姿态',
+                        icon: 'mdi:walk',
+                        iconColor: 'blue',
+                        score: Math.min(100, Math.max(40, overallScore + Math.floor(rng() * 20 - 10))),
+                        statusText: overallScore >= 80 ? '正常' : (overallScore >= 60 ? '轻度波动' : '异常'),
+                        statusColor: overallScore >= 80 ? 'green' : (overallScore >= 60 ? 'yellow' : 'red'),
+                        detail: overallScore >= 80
+                            ? '步频稳定，左右脚支撑力矩平衡，无明显偏移。'
+                            : (overallScore >= 60
+                                ? '步频减慢 8%，左右脚支撑力矩不平衡率为 12%。'
+                                : '步频减慢 15%，支撑力矩不平衡率达 20%，存在跌倒风险。')
+                    },
+                    {
+                        key: 'physio',
+                        name: '生理指标',
+                        icon: 'mdi:heart-pulse',
+                        iconColor: 'green',
+                        score: Math.min(100, Math.max(60, overallScore + Math.floor(rng() * 16 - 8))),
+                        statusText: '正常',
+                        statusColor: 'green',
+                        detail: '心率及呼吸频率在监测期间表现平稳，无应激反应。'
+                    }
+                ];
+
+                // 生成历史趋势（7个点，最后一个为当前分数）
+                var historyTrend = [];
+                for (var i = 0; i < 6; i++) {
+                    historyTrend.push(Math.min(100, Math.max(50, overallScore + Math.floor(rng() * 30 - 15))));
+                }
+                historyTrend.push(overallScore);
+                // 排序让趋势看起来合理（不一定严格递减）
+                historyTrend.sort(function(a, b) { return a - b; });
+                historyTrend[6] = overallScore;
+
+                // 生成建议
+                var suggestions = [];
+                if (overallScore >= 80) {
+                    suggestions = [
+                        '• <strong>保持现状：</strong> 继续目前的社交活动和认知训练，维持大脑活力。',
+                        '• <strong>定期筛查：</strong> 建议每 6 个月进行一次认知功能复评。',
+                        '• <strong>生活方式：</strong> 保持地中海饮食习惯，每日适度有氧运动。'
+                    ];
+                } else if (overallScore >= 60) {
+                    suggestions = [
+                        '• <strong>临床转诊：</strong> 建议预约三甲医院记忆门诊进行 MRI 扫描。',
+                        '• <strong>家庭训练：</strong> 进行每日 20 分钟的回忆疗法（翻看老照片描述）。',
+                        '• <strong>生活方式：</strong> 增加地中海饮食比例，每日进行 15 分钟平衡训练。'
+                    ];
+                } else {
+                    suggestions = [
+                        '• <strong>紧急转诊：</strong> 建议尽快前往记忆门诊，完善头颅 MRI 及血液生物标志物检查。',
+                        '• <strong>专人陪护：</strong> 日常生活中建议家属陪同，防止走失及跌倒等意外。',
+                        '• <strong>药物干预：</strong> 在专科医生指导下评估是否启动抗认知障碍药物治疗。'
+                    ];
+                }
+
+                return {
+                    overallScore: overallScore,
+                    riskLevel: riskLevel,
+                    riskLabel: riskLabel,
+                    riskColor: riskColor,
+                    riskDesc: riskDesc,
+                    dimensions: dimensions,
+                    historyTrend: historyTrend,
+                    suggestions: suggestions,
+                    edgeId: 'EDGE-CNS-2026-' + String(Math.floor(rng() * 9000 + 1000))
+                };
+            },
+
+            _hashString: function(str) {
+                var h = 1779033703;
+                for (var i = 0; i < str.length; i++) {
+                    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+                    h = h << 13 | h >>> 19;
+                }
+                return function() {
+                    h = Math.imul(h ^ (h >>> 16), 2246822507);
+                    h = Math.imul(h ^ (h >>> 13), 3266489909);
+                    return (h ^= h >>> 16) >>> 0;
+                }();
+            },
+
+            _mulberry32: function(a) {
+                return function() {
+                    var t = a += 0x6D2B79F5;
+                    t = Math.imul(t ^ (t >>> 15), t | 1);
+                    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                }
+            }
+        };
+
+        // ===== 页面逻辑 =====
+        function updateDateTime() {
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var el = document.getElementById('clock');
+            if (el) el.textContent = hours + ':' + minutes;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // 根据来源设置返回链接
+        var hasSessionId = new URLSearchParams(window.location.search).get('sessionId');
+        if (hasSessionId) {
+            var mobileBack = document.getElementById('mobile-back-link');
+            var desktopBack = document.getElementById('desktop-back-link');
+            var noDataBack = document.getElementById('no-data-back-link');
+            if (mobileBack) { mobileBack.href = 'report.html'; }
+            if (desktopBack) { desktopBack.href = 'report.html'; desktopBack.innerHTML = '<iconify-icon icon=\"mdi:arrow-left\" width=\"18\"></iconify-icon> 返回报告查询'; }
+            if (noDataBack) { noDataBack.href = 'report.html'; noDataBack.textContent = '返回报告查询'; }
+        }
+
+        // 读取数据：优先从 URL 参数 sessionId 读取，其次从 sessionStorage 读取
+        var reportData = null;
+        var patientInfo = null;
+        var sessionId = null;
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            sessionId = urlParams.get('sessionId');
+            if (sessionId) {
+                var sessionKey = 'adcare_session_' + sessionId;
+                var sessionStored = localStorage.getItem(sessionKey);
+                if (sessionStored) {
+                    reportData = JSON.parse(sessionStored);
+                }
+                if (reportData && reportData.patientId) {
+                    var patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                    for (var i = 0; i < patients.length; i++) {
+                        if (String(patients[i].id) === String(reportData.patientId)) {
+                            patientInfo = patients[i];
+                            break;
+                        }
+                    }
+                }
+                if (!patientInfo && reportData) {
+                    patientInfo = {
+                        name: reportData.patientName || '未知患者',
+                        age: reportData.patientAge || '--',
+                        gender: reportData.patientGender || '--'
+                    };
+                }
+            } else {
+                var stored = sessionStorage.getItem('assessment_report_data');
+                if (stored) reportData = JSON.parse(stored);
+                var currentPatientId = sessionStorage.getItem('currentPatientId');
+                if (currentPatientId) {
+                    var patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                    for (var i = 0; i < patients.length; i++) {
+                        if (String(patients[i].id) === String(currentPatientId)) {
+                            patientInfo = patients[i];
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('读取报告数据失败', e);
+        }
+
+        // 如果没有数据，显示提示
+        if (!reportData) {
+            document.getElementById('no-data-tip').style.display = 'flex';
+        } else {
+            // 生成模拟报告
+            var mock = MockReportAPI.generate(patientInfo);
+            renderReport(patientInfo, reportData, mock, sessionId);
+        }
+
+        function renderReport(patient, sessionData, mock, sessionId) {
+            var now = new Date();
+            var today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            var timeStr = today + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            var reportId = sessionId ? 'SR-' + sessionId : 'SR-' + today.replace(/-/g, '') + '-' + String(Math.floor(Math.random() * 900 + 100));
+            var pName = patient ? patient.name : '匿名患者';
+            var pAge = patient ? patient.age : '--';
+            var pGender = patient ? patient.gender : '--';
+            var avatarText = pName.charAt(0);
+
+            // === 移动端渲染 ===
+            document.getElementById('mobile-avatar').textContent = avatarText;
+            document.getElementById('mobile-patient-name').innerHTML = pName + ' <span class="text-sm font-normal text-gray-500 ml-1">' + pAge + '岁 · ' + pGender + '</span>';
+            document.getElementById('mobile-report-id').textContent = '报告编号：' + reportId;
+            document.getElementById('mobile-report-time').textContent = '采集时间：' + timeStr;
+            document.getElementById('mobile-edge-id').textContent = mock.edgeId;
+
+            // 风险卡片颜色
+            var riskCard = document.getElementById('mobile-risk-card');
+            if (mock.riskColor === 'green') {
+                riskCard.className = 'bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-3xl border border-green-100 relative overflow-hidden';
+            } else if (mock.riskColor === 'yellow') {
+                riskCard.className = 'bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-3xl border border-yellow-100 relative overflow-hidden';
+            } else {
+                riskCard.className = 'bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-3xl border border-red-100 relative overflow-hidden';
+            }
+            document.getElementById('mobile-risk-label').textContent = mock.riskLabel;
+            document.getElementById('mobile-risk-label').className = 'text-4xl font-black text-' + mock.riskColor + '-600';
+            document.getElementById('mobile-risk-level').textContent = '预警等级：' + mock.riskLevel;
+            document.getElementById('mobile-risk-desc').textContent = mock.riskDesc;
+
+            // 维度拆解
+            var dimContainer = document.getElementById('mobile-dimensions');
+            dimContainer.innerHTML = '';
+            mock.dimensions.forEach(function(dim) {
+                var bgClass = dim.iconColor + '-50';
+                var textClass = dim.iconColor + '-600';
+                var barColor = dim.statusColor + '-400';
+                var statusTextClass = dim.statusColor + '-500';
+                var html = '<div class="bg-white p-4 rounded-2xl border border-gray-100 flex gap-4">' +
+                    '<div class="w-10 h-10 bg-' + bgClass + ' rounded-xl flex items-center justify-center text-' + textClass + '">' +
+                    '<iconify-icon icon="' + dim.icon + '" width="20"></iconify-icon></div>' +
+                    '<div class="flex-1">' +
+                    '<div class="flex justify-between items-center mb-1">' +
+                    '<span class="text-xs font-bold">' + dim.name + '</span>' +
+                    '<span class="text-xs text-' + statusTextClass + ' font-bold">' + dim.statusText + '</span></div>' +
+                    '<div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">' +
+                    '<div class="h-full bg-' + barColor + '" style="width:' + dim.score + '%"></div></div>' +
+                    '<p class="text-[10px] text-gray-400 mt-2">' + dim.detail + '</p></div></div>';
+                dimContainer.innerHTML += html;
+            });
+
+            // 建议
+            var sugContainer = document.getElementById('mobile-suggestions');
+            sugContainer.innerHTML = '';
+            mock.suggestions.forEach(function(s) {
+                var li = document.createElement('li');
+                li.innerHTML = s;
+                sugContainer.appendChild(li);
+            });
+
+            // 趋势图
+            initTrendChart('mobile-trend-chart', mock.historyTrend);
+
+            // === 桌面端渲染 ===
+            document.getElementById('desktop-avatar').textContent = avatarText;
+            document.getElementById('desktop-patient-name').innerHTML = pName + ' <span class="text-base font-normal text-gray-500">' + pAge + '岁 · ' + pGender + '</span>';
+            document.getElementById('desktop-report-id').textContent = '报告编号：' + reportId;
+            document.getElementById('desktop-report-time').textContent = '采集时间：' + timeStr;
+            document.getElementById('desktop-edge-id').textContent = mock.edgeId;
+
+            // 风险卡片
+            var dRiskCard = document.getElementById('desktop-risk-card');
+            if (mock.riskColor === 'green') {
+                dRiskCard.className = 'bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100 h-full flex flex-col justify-center';
+            } else if (mock.riskColor === 'yellow') {
+                dRiskCard.className = 'bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-2xl border border-yellow-100 h-full flex flex-col justify-center';
+            } else {
+                dRiskCard.className = 'bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-2xl border border-red-100 h-full flex flex-col justify-center';
+            }
+            document.getElementById('desktop-risk-label').textContent = mock.riskLabel;
+            document.getElementById('desktop-risk-label').className = 'text-4xl font-black text-' + mock.riskColor + '-600';
+            document.getElementById('desktop-risk-level').textContent = '预警等级：' + mock.riskLevel;
+            document.getElementById('desktop-risk-desc').textContent = mock.riskDesc;
+            document.getElementById('desktop-score').textContent = mock.overallScore + '/100';
+
+            // 维度拆解
+            var dDimContainer = document.getElementById('desktop-dimensions');
+            dDimContainer.innerHTML = '';
+            mock.dimensions.forEach(function(dim) {
+                var bgClass = dim.iconColor + '-50';
+                var textClass = dim.iconColor + '-600';
+                var barColor = dim.statusColor + '-400';
+                var statusTextClass = dim.statusColor + '-500';
+                var html = '<div class="bg-gray-50 p-5 rounded-xl border border-gray-100">' +
+                    '<div class="flex items-center gap-3 mb-3">' +
+                    '<div class="w-10 h-10 bg-' + bgClass + ' rounded-xl flex items-center justify-center text-' + textClass + '">' +
+                    '<iconify-icon icon="' + dim.icon + '" width="20"></iconify-icon></div>' +
+                    '<div class="flex-1">' +
+                    '<div class="flex justify-between items-center">' +
+                    '<span class="text-sm font-bold text-gray-800">' + dim.name + '</span>' +
+                    '<span class="text-xs text-' + statusTextClass + ' font-bold">' + dim.statusText + '</span></div></div></div>' +
+                    '<div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">' +
+                    '<div class="h-full bg-' + barColor + '" style="width:' + dim.score + '%"></div></div>' +
+                    '<p class="text-xs text-gray-500">' + dim.detail + '</p></div>';
+                dDimContainer.innerHTML += html;
+            });
+
+            // 建议
+            var dSugContainer = document.getElementById('desktop-suggestions');
+            dSugContainer.innerHTML = '';
+            mock.suggestions.forEach(function(s) {
+                var li = document.createElement('li');
+                li.innerHTML = s;
+                dSugContainer.appendChild(li);
+            });
+
+            // 趋势图
+            initTrendChart('desktop-trend-chart', mock.historyTrend);
+
+            // 更新患者状态（根据模拟结果）
+            updatePatientStatus(mock.riskColor);
+        }
+
+        function initTrendChart(chartId, data) {
+            var el = document.getElementById(chartId);
+            if (!el) return;
+            var chart = echarts.init(el);
+            var months = ['10月', '11月', '12月', '1月', '2月', '3月', '今日'];
+            chart.setOption({
+                grid: { top: 10, bottom: 20, left: 30, right: 10 },
+                xAxis: {
+                    type: 'category',
+                    data: months,
+                    axisLine: { lineStyle: { color: '#f1f5f9' } },
+                    axisLabel: { color: '#94a3b8', fontSize: 10 }
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 100,
+                    axisLabel: { color: '#94a3b8', fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#f8fafc' } }
+                },
+                series: [{
+                    data: data,
+                    type: 'line',
+                    smooth: true,
+                    symbolSize: 6,
+                    itemStyle: { color: '#2563eb' },
+                    lineStyle: { width: 3 },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(37, 99, 235, 0.1)' },
+                            { offset: 1, color: 'transparent' }
+                        ])
+                    }
+                }]
+            });
+        }
+
+        function updatePatientStatus(riskColor) {
+            var patientId = sessionStorage.getItem('currentPatientId');
+            if (!patientId) return;
+            try {
+                var patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                var patient = null;
+                for (var i = 0; i < patients.length; i++) {
+                    if (String(patients[i].id) === String(patientId)) {
+                        patient = patients[i];
+                        break;
+                    }
+                }
+                if (!patient) return;
+                if (riskColor === 'green') patient.status = 'good';
+                else if (riskColor === 'red') patient.status = 'risk';
+                else patient.status = 'review';
+                localStorage.setItem('portal_patients', JSON.stringify(patients));
+            } catch (e) {
+                console.warn('更新患者状态失败', e);
+            }
+        }
+
+        function saveReport() {
+            alert('报告已存档至本地记录。');
+        }
+    </script>
+</body>
+</html>

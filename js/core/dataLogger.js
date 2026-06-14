@@ -101,6 +101,13 @@ class DataLogger {
         return this.logs.map(log => JSON.stringify(log)).join('\n');
     }
 
+    getDataSize() {
+        const bytes = this.logs.length * 256;
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
     clearLogs() {
         this.logs = [];
         if (this.db) {

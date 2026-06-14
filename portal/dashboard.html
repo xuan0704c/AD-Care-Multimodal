@@ -100,7 +100,7 @@
                     </div>
                     <div class="bg-green-50 p-3 rounded-xl border border-green-100">
                         <p class="text-[10px] text-green-600 font-medium mb-1">社区总覆盖</p>
-                        <p class="text-xl font-bold text-green-900">156</p>
+                        <p class="text-xl font-bold text-green-900" id="total-patients-count">0</p>
                     </div>
                 </div>
 
@@ -137,12 +137,6 @@
                                 <iconify-icon icon="mdi:account-group" width="20"></iconify-icon>
                             </div>
                             <span class="text-[10px] text-gray-600 font-medium">患者管理</span>
-                        </a>
-                        <a href="guidance.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                            <div class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
-                                <iconify-icon icon="mdi:clipboard-list" width="20"></iconify-icon>
-                            </div>
-                            <span class="text-[10px] text-gray-600 font-medium">采集指引</span>
                         </a>
                         <a href="report.html" class="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                             <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
@@ -278,7 +272,7 @@
                         </div>
                     </div>
                     <p class="text-3xl font-bold text-blue-600" id="today-count-desktop">12</p>
-                    <p class="text-xs text-green-500 mt-2">+3 较昨日</p>
+                    <p class="text-xs text-green-500 mt-2" id="today-diff-desktop"></p>
                 </div>
                 <div class="bg-white rounded-2xl p-6 shadow-sm">
                     <div class="flex items-center justify-between mb-4">
@@ -297,7 +291,7 @@
                             <iconify-icon icon="mdi:users" width="20" class="text-green-600"></iconify-icon>
                         </div>
                     </div>
-                    <p class="text-3xl font-bold text-green-600">156</p>
+                    <p class="text-3xl font-bold text-green-600" id="total-patients-count-desktop">0</p>
                     <p class="text-xs text-gray-500 mt-2">覆盖12个社区</p>
                 </div>
                 <div class="bg-white rounded-2xl p-6 shadow-sm">
@@ -307,7 +301,7 @@
                             <iconify-icon icon="mdi:check-circle" width="20" class="text-purple-600"></iconify-icon>
                         </div>
                     </div>
-                    <p class="text-3xl font-bold text-purple-600">128</p>
+                    <p class="text-3xl font-bold text-purple-600" id="month-completed-count-desktop">0</p>
                     <p class="text-xs text-green-500 mt-2">完成率 85%</p>
                 </div>
             </div>
@@ -344,10 +338,6 @@
                                     <iconify-icon icon="mdi:play-circle" width="24"></iconify-icon>
                                     开始评估
                                 </button>
-                                <a href="guidance.html" class="flex items-center gap-2 bg-white/20 text-white px-8 py-4 rounded-xl font-medium hover:bg-white/30 transition-all">
-                                    <iconify-icon icon="mdi:book-open" width="24"></iconify-icon>
-                                    采集指引
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -653,6 +643,88 @@
             });
         }
 
+        // 更新统计数据看板
+        function updateStats() {
+            const SESSION_PREFIX = 'adcare_session_';
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const todayEnd = todayStart + 24 * 60 * 60 * 1000;
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+            const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+
+            // 读取所有 session
+            const sessions = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(SESSION_PREFIX)) {
+                    try {
+                        sessions.push(JSON.parse(localStorage.getItem(key)));
+                    } catch (e) {}
+                }
+            }
+
+            // 今日筛查：今天完成评估的患者人数（去重）
+            const todayPatientIds = new Set();
+            sessions.forEach(s => {
+                if (s.endTime && s.endTime >= todayStart && s.endTime < todayEnd && s.patientId) {
+                    todayPatientIds.add(String(s.patientId));
+                }
+            });
+            const todayCount = todayPatientIds.size;
+
+            // 昨日筛查：昨天完成评估的患者人数（去重）
+            const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
+            const yesterdayPatientIds = new Set();
+            sessions.forEach(s => {
+                if (s.endTime && s.endTime >= yesterdayStart && s.endTime < todayStart && s.patientId) {
+                    yesterdayPatientIds.add(String(s.patientId));
+                }
+            });
+            const yesterdayCount = yesterdayPatientIds.size;
+            const diff = todayCount - yesterdayCount;
+
+            // 本月完成：本月完成评估的患者人数（去重）
+            const monthPatientIds = new Set();
+            sessions.forEach(s => {
+                if (s.endTime && s.endTime >= monthStart && s.endTime < monthEnd && s.patientId) {
+                    monthPatientIds.add(String(s.patientId));
+                }
+            });
+            const monthCount = monthPatientIds.size;
+
+            // 高风险患者数 & 社区总覆盖
+            let riskCount = 0;
+            let totalPatients = 0;
+            try {
+                const patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                totalPatients = patients.length;
+                patients.forEach(p => {
+                    if (p.status === 'risk') riskCount++;
+                });
+            } catch (e) {}
+
+            // 更新移动端
+            const mobileToday = document.getElementById('today-count');
+            const mobileRisk = document.getElementById('risk-count');
+            const mobileTotal = document.getElementById('total-patients-count');
+            if (mobileToday) mobileToday.textContent = todayCount;
+            if (mobileRisk) mobileRisk.textContent = riskCount;
+            if (mobileTotal) mobileTotal.textContent = totalPatients;
+
+            // 更新桌面端
+            const desktopToday = document.getElementById('today-count-desktop');
+            const desktopRisk = document.getElementById('risk-count-desktop');
+            const desktopTotal = document.getElementById('total-patients-count-desktop');
+            const desktopMonth = document.getElementById('month-completed-count-desktop');
+            const desktopDiff = document.getElementById('today-diff-desktop');
+            if (desktopToday) desktopToday.textContent = todayCount;
+            if (desktopRisk) desktopRisk.textContent = riskCount;
+            if (desktopTotal) desktopTotal.textContent = totalPatients;
+            if (desktopMonth) desktopMonth.textContent = monthCount;
+            if (desktopDiff) desktopDiff.textContent = diff > 0 ? `+${diff} 较昨日` : '';
+        }
+
+        updateStats();
         renderRecentReports('recent-reports');
         renderRecentReports('recent-reports-desktop');
 

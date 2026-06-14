@@ -359,7 +359,23 @@
         </div>
 
         <div id="result-screen" class="screen">
-            <div class="result-container">
+            <!-- 未完成状态 -->
+            <div class="result-container" id="result-incomplete" style="display:none;">
+                <div style="font-size:3rem;margin-bottom:1rem;">&#9888;&#65039;</div>
+                <h2>评估未完成</h2>
+                <p style="color:var(--text-secondary);margin-bottom:1.5rem;">您已完成 <strong id="incomplete-completed">0</strong> / <strong id="incomplete-total">8</strong> 个核心任务</p>
+                <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:2rem;">还有 <span id="incomplete-remaining" style="color:var(--danger);font-weight:bold;">0</span> 个任务待完成，建议继续评估以获得完整报告。</p>
+                <div class="result-actions">
+                    <button id="btn-resume-assessment" class="btn btn-primary btn-large">继续评估</button>
+                    <button id="btn-force-exit" class="btn btn-secondary btn-large">确认退出</button>
+                </div>
+                <div class="privacy-notice">
+                    <p>退出后已采集的数据将被删除，您将需要重新开始。</p>
+                </div>
+            </div>
+            <!-- 完成状态 -->
+            <div class="result-container" id="result-complete" style="display:none;">
+                <div style="font-size:3rem;margin-bottom:1rem;">&#9989;</div>
                 <h2>评估完成</h2>
                 <div class="result-summary">
                     <div class="summary-card">
@@ -379,11 +395,9 @@
                     </div>
                 </div>
                 <div class="result-actions">
-                    <button id="btn-export" class="btn btn-primary btn-large">
-                        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        导出评估数据
-                    </button>
-                    <button id="btn-delete" class="btn btn-secondary btn-large">删除数据并退出</button>
+                    <button id="btn-view-report" class="btn btn-primary btn-large">查看详细报告</button>
+                    <button id="btn-export" class="btn btn-secondary btn-large">导出评估数据</button>
+                    <button id="btn-delete" class="btn btn-secondary btn-large" style="background:transparent;border:1px solid var(--border);color:var(--text-secondary);">删除数据并退出</button>
                 </div>
                 <div class="privacy-notice">
                     <p>&#128274; 所有数据仅存储在本地设备中，导出后可离线分析或交由专业人员解读。</p>
@@ -446,7 +460,11 @@
 
                 // 进度跟踪
                 this.completedTasks = new Set();
-                this.totalTasks = 8; // A模块4个 + C模块4个任务（B模块实时监测不计入）
+                this.totalTasks = 8; // A模块4个 + C模块4个核心任务（B模块实时监测不计入，social为可选）
+                this.coreTasks = [
+                    'A-memory', 'A-executive', 'A-language', 'A-spatial',
+                    'C-medication', 'C-appointment', 'C-finance', 'C-route'
+                ];
 
                 // 多模态采集全局管理
                 this.multimodalCollector = null;
@@ -499,6 +517,9 @@
                 document.getElementById('btn-confirm-exit').addEventListener('click', () => this.confirmExit());
                 document.getElementById('btn-export').addEventListener('click', () => this.exportData());
                 document.getElementById('btn-delete').addEventListener('click', () => this.deleteAndExit());
+                document.getElementById('btn-view-report').addEventListener('click', () => this.viewReport());
+                document.getElementById('btn-resume-assessment').addEventListener('click', () => this.resumeFromResult());
+                document.getElementById('btn-force-exit').addEventListener('click', () => this.forceExit());
 
                 // 模块标签页和任务按钮的点击已禁用，用户必须按顺序完成任务
                 // document.querySelectorAll('.module-tab').forEach(tab => {
@@ -565,11 +586,18 @@
             }
 
             updateProgressDisplay() {
-                const completed = this.completedTasks.size;
+                const completed = Array.from(this.completedTasks).filter(key => this.coreTasks.indexOf(key) !== -1).length;
                 const progress = Math.round((completed / this.totalTasks) * 100);
                 document.getElementById('progress-display').textContent = `${progress}%`;
                 const fill = document.getElementById('progress-fill');
                 if (fill) fill.style.width = `${progress}%`;
+            }
+
+            isAssessmentComplete() {
+                for (let i = 0; i < this.coreTasks.length; i++) {
+                    if (!this.completedTasks.has(this.coreTasks[i])) return false;
+                }
+                return true;
             }
 
             markTaskCompleted(module, task) {
@@ -1100,16 +1128,63 @@
                 const minutes = Math.floor(duration / 60);
                 const seconds = duration % 60;
                 document.getElementById('total-time').textContent = `${minutes}分${seconds}秒`;
-                // 只统计 A 和 C 模块的已完成任务数
-                const relevantCompleted = Array.from(this.completedTasks).filter(key => {
-                    const module = key.split('-')[0];
-                    return module === 'A' || module === 'C';
-                }).length;
+                // 只统计核心任务
+                const relevantCompleted = Array.from(this.completedTasks).filter(key => this.coreTasks.indexOf(key) !== -1).length;
                 document.getElementById('task-count').textContent = `${relevantCompleted} / ${this.totalTasks}`;
-                document.getElementById('data-size').textContent = this.dataLogger.getDataSize();
+                const realDataSize = this.dataLogger.getDataSize();
+                document.getElementById('data-size').textContent = realDataSize;
+
+                const complete = this.isAssessmentComplete();
+                document.getElementById('result-incomplete').style.display = complete ? 'none' : 'block';
+                document.getElementById('result-complete').style.display = complete ? 'block' : 'none';
+
+                if (!complete) {
+                    document.getElementById('incomplete-completed').textContent = relevantCompleted;
+                    document.getElementById('incomplete-total').textContent = this.totalTasks;
+                    document.getElementById('incomplete-remaining').textContent = this.totalTasks - relevantCompleted;
+                }
+
+                // 将真实数据大小和任务完成情况保存到 session 记录，供报告列表使用
+                try {
+                    const sessionKey = 'adcare_session_' + this.sessionManager.sessionId;
+                    const sessionData = JSON.parse(localStorage.getItem(sessionKey) || '{}');
+                    sessionData.dataSize = realDataSize;
+                    sessionData.completedTasks = relevantCompleted;
+                    localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+                } catch (e) {
+                    console.warn('保存报告数据到 session 失败', e);
+                }
 
                 // 更新患者列表中的状态
                 this.updatePatientStatusAfterAssessment();
+            }
+
+            resumeFromResult() {
+                this.showScreen('assessment');
+                this.dataLogger.logEvent('assessment_resumed_from_result', {});
+            }
+
+            forceExit() {
+                if (confirm('确定要退出吗？未完成的评估将不会生成完整报告。')) {
+                    this.deleteAndExit();
+                }
+            }
+
+            viewReport() {
+                if (!this.isAssessmentComplete()) {
+                    alert('请先完成所有评估任务后再查看报告。');
+                    return;
+                }
+                // 将当前会话数据和患者信息存入 sessionStorage，供报告页使用
+                const reportData = {
+                    sessionId: this.sessionManager.sessionId,
+                    patient: this.sessionManager.patientInfo || null,
+                    completedTasks: Array.from(this.completedTasks),
+                    duration: Date.now() - this.recordingStartTime,
+                    timestamp: Date.now()
+                };
+                sessionStorage.setItem('assessment_report_data', JSON.stringify(reportData));
+                window.location.href = 'portal/assessment-report.html';
             }
 
             updatePatientStatusAfterAssessment() {
@@ -1125,7 +1200,12 @@
                     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
                     patient.lastCheck = today;
-                    patient.status = 'reporting';
+                    // 只有完成全部核心任务才标记为 reporting，否则保持 pending
+                    if (this.isAssessmentComplete()) {
+                        patient.status = 'reporting';
+                    } else {
+                        patient.status = 'pending';
+                    }
 
                     localStorage.setItem('portal_patients', JSON.stringify(patients));
                     this.dataLogger.logEvent('patient_status_updated', { patientId, lastCheck: today, status: patient.status });
