@@ -130,10 +130,6 @@
                     <iconify-icon icon="mdi:account-group" width="24"></iconify-icon>
                     <span class="text-[10px] mt-1 font-bold">患者列表</span>
                 </div>
-                <button onclick="enterAssessment()" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
-                    <iconify-icon icon="mdi:play-circle" width="24"></iconify-icon>
-                    <span class="text-[10px] mt-1">开始评估</span>
-                </button>
                 <a href="profile.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
                     <iconify-icon icon="mdi:account" width="24"></iconify-icon>
                     <span class="text-[10px] mt-1">我的</span>
@@ -606,8 +602,8 @@
                     </div>
                 </div>
                 <div class="pt-2">
-                    <button onclick="closeDetailModal(); enterAssessment(${patient.id});" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
-                        开始评估
+                    <button onclick="closeDetailModal();" class="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                        关闭
                     </button>
                 </div>
             `;
@@ -728,9 +724,7 @@
                             <button onclick="openDesktopDetailModal(${p.id})" class="p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="查看">
                                 <iconify-icon icon="mdi:eye" width="18"></iconify-icon>
                             </button>
-                            <button onclick="enterAssessment(${p.id})" class="p-2 text-gray-500 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors" title="开始评估">
-                                <iconify-icon icon="mdi:play-circle" width="18"></iconify-icon>
-                            </button>
+
                             <button onclick="deletePatient(${p.id})" class="p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors" title="删除">
                                 <iconify-icon icon="mdi:delete" width="18"></iconify-icon>
                             </button>
@@ -785,10 +779,7 @@
                     </div>
                 </div>
                 <div class="pt-2 flex gap-3">
-                    <button onclick="closeDesktopDetailModal(); enterAssessment(${patient.id});" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
-                        开始评估
-                    </button>
-                    <button onclick="closeDesktopDetailModal();" class="px-6 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                    <button onclick="closeDesktopDetailModal();" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
                         关闭
                     </button>
                 </div>
