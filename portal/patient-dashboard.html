@@ -370,6 +370,7 @@
         function enterAssessment() {
             sessionStorage.removeItem('preparationCompleted');
             sessionStorage.removeItem('currentPatientId');
+            sessionStorage.setItem('assessment_source', 'patient');
             window.location.href = '../index.html';
         }
 

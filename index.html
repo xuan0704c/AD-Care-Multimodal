@@ -1069,13 +1069,21 @@
 
             async confirmExit() {
                 this.hideExitModal();
-                await this.stopAssessment();
+                try {
+                    await this.stopAssessment();
+                } catch (e) {
+                    console.warn('Stop assessment failed:', e);
+                }
                 this.showScreen('result');
             }
 
             quitAssessment() {
                 document.getElementById('pause-modal').classList.remove('active');
-                this.stopAssessment();
+                try {
+                    this.stopAssessment();
+                } catch (e) {
+                    console.warn('Stop assessment failed:', e);
+                }
                 this.showScreen('result');
             }
 
@@ -1142,7 +1150,12 @@
                     this.mediaRecorder.clearData();
                     sessionStorage.removeItem('preparationCompleted');
                     alert('数据已删除。感谢您的参与。');
-                    window.location.href = 'portal/dashboard.html';
+                    var source = sessionStorage.getItem('assessment_source');
+                    if (source === 'patient') {
+                        window.location.href = 'portal/patient-dashboard.html';
+                    } else {
+                        window.location.href = 'portal/dashboard.html';
+                    }
                 }
             }
 
