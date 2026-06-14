@@ -130,6 +130,10 @@
                     <iconify-icon icon="mdi:account-group" width="24"></iconify-icon>
                     <span class="text-[10px] mt-1 font-bold">患者列表</span>
                 </div>
+                <button onclick="enterAssessment()" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                    <iconify-icon icon="mdi:play-circle" width="24"></iconify-icon>
+                    <span class="text-[10px] mt-1">开始评估</span>
+                </button>
                 <a href="profile.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
                     <iconify-icon icon="mdi:account" width="24"></iconify-icon>
                     <span class="text-[10px] mt-1">我的</span>
@@ -602,8 +606,8 @@
                     </div>
                 </div>
                 <div class="pt-2">
-                    <button onclick="closeDetailModal();" class="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
-                        关闭
+                    <button onclick="closeDetailModal(); enterAssessment(${patient.id});" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+                        开始评估
                     </button>
                 </div>
             `;
@@ -670,30 +674,36 @@
 
         // ===== 桌面端功能 =====
         function renderDesktopPatients() {
-            const patients = loadPatients();
-            const container = document.getElementById('desktop-patient-list');
+            var patients = loadPatients();
+            var container = document.getElementById('desktop-patient-list');
             if (!container) return;
 
-            const searchVal = document.getElementById('desktop-search')?.value?.trim().toLowerCase() || '';
-            const statusFilter = document.getElementById('desktop-filter-status')?.value || 'all';
+            var searchInput = document.getElementById('desktop-search');
+            var filterInput = document.getElementById('desktop-filter-status');
+            var searchVal = '';
+            var statusFilter = 'all';
+            if (searchInput && searchInput.value) searchVal = searchInput.value.trim().toLowerCase();
+            if (filterInput && filterInput.value) statusFilter = filterInput.value;
 
-            let filtered = patients;
+            var filtered = patients;
             if (statusFilter !== 'all') {
-                filtered = filtered.filter(p => p.status === statusFilter);
+                filtered = filtered.filter(function(p) { return p.status === statusFilter; });
             }
             if (searchVal) {
-                filtered = filtered.filter(p => p.name.includes(searchVal) || String(p.id).includes(searchVal));
+                filtered = filtered.filter(function(p) { return p.name.indexOf(searchVal) !== -1 || String(p.id).indexOf(searchVal) !== -1; });
             }
 
             // 更新统计
-            const desktopTotal = document.getElementById('desktop-total-count');
-            const desktopPending = document.getElementById('desktop-pending-count');
-            const desktopNew = document.getElementById('desktop-new-count');
+            var desktopTotal = document.getElementById('desktop-total-count');
+            var desktopPending = document.getElementById('desktop-pending-count');
+            var desktopNew = document.getElementById('desktop-new-count');
             if (desktopTotal) desktopTotal.textContent = patients.length;
-            if (desktopPending) desktopPending.textContent = patients.filter(p => p.status === 'pending').length;
-            const now = new Date();
-            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            if (desktopNew) desktopNew.textContent = patients.filter(p => p.regTime && p.regTime.startsWith(currentMonth)).length;
+            if (desktopPending) desktopPending.textContent = patients.filter(function(p) { return p.status === 'pending'; }).length;
+            var now = new Date();
+            var currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            if (desktopNew) {
+                desktopNew.textContent = patients.filter(function(p) { return p.regTime && p.regTime.indexOf(currentMonth) === 0; }).length;
+            }
 
             container.innerHTML = '';
             if (filtered.length === 0) {
@@ -701,156 +711,123 @@
                 return;
             }
 
-            filtered.forEach(p => {
-                const cfg = getStatusConfig(p.status);
-                const lastText = p.lastCheck ? p.lastCheck : '暂无';
-                const tr = document.createElement('tr');
+            for (var i = 0; i < filtered.length; i++) {
+                var p = filtered[i];
+                var cfg = getStatusConfig(p.status);
+                var lastText = p.lastCheck ? p.lastCheck : '暂无';
+                var tr = document.createElement('tr');
                 tr.className = 'border-b border-gray-50 hover:bg-gray-50 transition-colors';
-                tr.innerHTML = `
-                    <td class="py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full border-2 ${cfg.border} bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm">${getFirstChar(p.name)}</div>
-                            <span class="font-bold text-gray-800">${p.name}</span>
-                        </div>
-                    </td>
-                    <td class="py-4 text-gray-700">${p.age}</td>
-                    <td class="py-4 text-gray-700">${p.gender}</td>
-                    <td class="py-4 text-gray-500 text-sm">${lastText}</td>
-                    <td class="py-4">
-                        <span class="${cfg.bg} ${cfg.text} px-3 py-1 rounded-lg text-xs font-bold">${cfg.label}</span>
-                    </td>
-                    <td class="py-4 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                            <button onclick="openDesktopDetailModal(${p.id})" class="p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="查看">
-                                <iconify-icon icon="mdi:eye" width="18"></iconify-icon>
-                            </button>
-
-                            <button onclick="deletePatient(${p.id})" class="p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors" title="删除">
-                                <iconify-icon icon="mdi:delete" width="18"></iconify-icon>
-                            </button>
-                        </div>
-                    </td>
-                `;
+                tr.innerHTML = '<td class="py-4"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full border-2 ' + cfg.border + ' bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm">' + getFirstChar(p.name) + '</div><span class="font-bold text-gray-800">' + p.name + '</span></div></td><td class="py-4 text-gray-700">' + p.age + '</td><td class="py-4 text-gray-700">' + p.gender + '</td><td class="py-4 text-gray-500 text-sm">' + lastText + '</td><td class="py-4"><span class="' + cfg.bg + ' ' + cfg.text + ' px-3 py-1 rounded-lg text-xs font-bold">' + cfg.label + '</span></td><td class="py-4 text-right"><div class="flex items-center justify-end gap-2"><button onclick="openDesktopDetailModal(' + p.id + ')" class="p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="查看"><iconify-icon icon="mdi:eye" width="18"></iconify-icon></button><button onclick="enterAssessment(' + p.id + ')" class="p-2 text-gray-500 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors" title="开始评估"><iconify-icon icon="mdi:play-circle" width="18"></iconify-icon></button><button onclick="deletePatient(' + p.id + ')" class="p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors" title="删除"><iconify-icon icon="mdi:delete" width="18"></iconify-icon></button></div></td>';
                 container.appendChild(tr);
-            });
+            }
         }
 
         function deletePatient(id) {
             if (!confirm('确定要删除该患者吗？')) return;
-            const patients = loadPatients().filter(p => p.id !== id);
+            var patients = loadPatients().filter(function(p) { return p.id !== id; });
             savePatients(patients);
             renderPatients();
             renderDesktopPatients();
         }
 
         function openDesktopDetailModal(patientId) {
-            const patients = loadPatients();
-            const patient = patients.find(p => p.id === patientId);
+            var patients = loadPatients();
+            var patient = null;
+            for (var i = 0; i < patients.length; i++) {
+                if (patients[i].id === patientId) { patient = patients[i]; break; }
+            }
             if (!patient) return;
-            const modal = document.getElementById('desktop-detail-modal');
-            const body = document.getElementById('desktop-detail-body');
-            const cfg = getStatusConfig(patient.status);
-            const lastText = patient.lastCheck ? `上次评估：${patient.lastCheck}` : '暂无评估记录';
+            var modal = document.getElementById('desktop-detail-modal');
+            var body = document.getElementById('desktop-detail-body');
+            var cfg = getStatusConfig(patient.status);
+            var lastText = patient.lastCheck ? '上次评估：' + patient.lastCheck : '暂无评估记录';
 
-            body.innerHTML = `
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-16 h-16 rounded-full border-2 ${cfg.border} bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xl">${getFirstChar(patient.name)}</div>
-                    <div>
-                        <h3 class="font-bold text-gray-800 text-lg">${patient.name}</h3>
-                        <p class="text-sm text-gray-500">${patient.age}岁 · ${patient.gender}</p>
-                    </div>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-xl space-y-3">
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-400">房间号 / 住址</span>
-                        <span class="text-sm font-medium text-gray-700">${patient.room}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-400">档案注册时间</span>
-                        <span class="text-sm font-medium text-gray-700">${patient.regTime || '--'}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-400">当前状态</span>
-                        <span class="text-sm font-bold ${cfg.text}">${cfg.label}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-400">评估记录</span>
-                        <span class="text-sm font-medium text-gray-700">${lastText}</span>
-                    </div>
-                </div>
-                <div class="pt-2 flex gap-3">
-                    <button onclick="closeDesktopDetailModal();" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
-                        关闭
-                    </button>
-                </div>
-            `;
+            body.innerHTML = '<div class="flex items-center gap-4 mb-4"><div class="w-16 h-16 rounded-full border-2 ' + cfg.border + ' bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xl">' + getFirstChar(patient.name) + '</div><div><h3 class="font-bold text-gray-800 text-lg">' + patient.name + '</h3><p class="text-sm text-gray-500">' + patient.age + '岁 · ' + patient.gender + '</p></div></div><div class="bg-gray-50 p-4 rounded-xl space-y-3"><div class="flex justify-between"><span class="text-xs text-gray-400">房间号 / 住址</span><span class="text-sm font-medium text-gray-700">' + patient.room + '</span></div><div class="flex justify-between"><span class="text-xs text-gray-400">档案注册时间</span><span class="text-sm font-medium text-gray-700">' + (patient.regTime || '--') + '</span></div><div class="flex justify-between"><span class="text-xs text-gray-400">当前状态</span><span class="text-sm font-bold ' + cfg.text + '">' + cfg.label + '</span></div><div class="flex justify-between"><span class="text-xs text-gray-400">评估记录</span><span class="text-sm font-medium text-gray-700">' + lastText + '</span></div></div><div class="pt-2 flex gap-3"><button onclick="closeDesktopDetailModal(); enterAssessment(' + patient.id + ');" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">开始评估</button><button onclick="closeDesktopDetailModal();" class="px-6 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">关闭</button></div>';
             modal.style.display = 'flex';
         }
 
         function closeDesktopDetailModal() {
-            document.getElementById('desktop-detail-modal').style.display = 'none';
+            var modal = document.getElementById('desktop-detail-modal');
+            if (modal) modal.style.display = 'none';
         }
 
-        document.getElementById('desktop-detail-modal')?.addEventListener('click', function(e) {
-            if (e.target === this) closeDesktopDetailModal();
-        });
+        var desktopDetailModal = document.getElementById('desktop-detail-modal');
+        if (desktopDetailModal) {
+            desktopDetailModal.addEventListener('click', function(e) {
+                if (e.target === this) closeDesktopDetailModal();
+            });
+        }
 
-        document.getElementById('desktop-search')?.addEventListener('input', renderDesktopPatients);
-        document.getElementById('desktop-filter-status')?.addEventListener('change', renderDesktopPatients);
+        var desktopSearch = document.getElementById('desktop-search');
+        if (desktopSearch) desktopSearch.addEventListener('input', renderDesktopPatients);
+
+        var desktopFilter = document.getElementById('desktop-filter-status');
+        if (desktopFilter) desktopFilter.addEventListener('change', renderDesktopPatients);
 
         // 桌面端添加患者模态框控制
         function openDesktopAddModal() {
-            document.getElementById('desktop-add-modal').style.display = 'flex';
-            document.getElementById('desktop-p-name').focus();
+            var modal = document.getElementById('desktop-add-modal');
+            if (modal) modal.style.display = 'flex';
+            var input = document.getElementById('desktop-p-name');
+            if (input) input.focus();
         }
 
         function closeDesktopAddModal() {
-            document.getElementById('desktop-add-modal').style.display = 'none';
-            document.getElementById('desktop-add-patient-form').reset();
+            var modal = document.getElementById('desktop-add-modal');
+            if (modal) modal.style.display = 'none';
+            var form = document.getElementById('desktop-add-patient-form');
+            if (form) form.reset();
         }
 
-        document.getElementById('desktop-add-modal')?.addEventListener('click', function(e) {
-            if (e.target === this) closeDesktopAddModal();
-        });
+        var desktopAddModal = document.getElementById('desktop-add-modal');
+        if (desktopAddModal) {
+            desktopAddModal.addEventListener('click', function(e) {
+                if (e.target === this) closeDesktopAddModal();
+            });
+        }
 
-        document.getElementById('desktop-add-patient-form')?.addEventListener('submit', function(e) {
-            e.preventDefault();
+        var desktopAddForm = document.getElementById('desktop-add-patient-form');
+        if (desktopAddForm) {
+            desktopAddForm.addEventListener('submit', function(e) {
+                e.preventDefault();
 
-            const name = document.getElementById('desktop-p-name').value.trim();
-            const age = parseInt(document.getElementById('desktop-p-age').value);
-            const gender = document.querySelector('input[name="desktop-p-gender"]:checked').value;
-            const room = document.getElementById('desktop-p-room').value.trim();
+                var name = document.getElementById('desktop-p-name').value.trim();
+                var age = parseInt(document.getElementById('desktop-p-age').value);
+                var genderEl = document.querySelector('input[name="desktop-p-gender"]:checked');
+                var gender = genderEl ? genderEl.value : '男';
+                var room = document.getElementById('desktop-p-room').value.trim();
 
-            if (!name || !age || !room) return;
+                if (!name || !age || !room) return;
 
-            const patients = loadPatients();
-            const now = new Date();
-            const regTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                var patients = loadPatients();
+                var now = new Date();
+                var regTime = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-            const newPatient = {
-                id: Date.now(),
-                name,
-                age,
-                gender,
-                room,
-                status: 'pending',
-                lastCheck: null,
-                regTime
-            };
+                var newPatient = {
+                    id: Date.now(),
+                    name: name,
+                    age: age,
+                    gender: gender,
+                    room: room,
+                    status: 'pending',
+                    lastCheck: null,
+                    regTime: regTime
+                };
 
-            patients.unshift(newPatient);
-            savePatients(patients);
-            renderPatients();
-            renderDesktopPatients();
-            closeDesktopAddModal();
-        });
+                patients.unshift(newPatient);
+                savePatients(patients);
+                renderPatients();
+                renderDesktopPatients();
+                closeDesktopAddModal();
+            });
+        }
 
         // 显示已保存的用户名
-        const savedUsername = localStorage.getItem('portal_username');
+        var savedUsername = localStorage.getItem('portal_username');
         if (savedUsername) {
-            const desktopUserName = document.getElementById('desktop-user-name');
+            var desktopUserName = document.getElementById('desktop-user-name');
             if (desktopUserName) desktopUserName.textContent = savedUsername + '医生';
-            const desktopUserAvatar = document.getElementById('desktop-user-avatar');
+            var desktopUserAvatar = document.getElementById('desktop-user-avatar');
             if (desktopUserAvatar) desktopUserAvatar.textContent = savedUsername.charAt(0);
         }
 
