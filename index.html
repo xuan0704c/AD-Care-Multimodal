@@ -61,6 +61,27 @@
                         <button class="identity-filter-btn" data-filter="week" onclick="window.adCareApp.filterIdentityByTime('week')">一周内</button>
                         <button class="identity-filter-btn" data-filter="today" onclick="window.adCareApp.filterIdentityByTime('today')">今天</button>
                     </div>
+                    
+                    <!-- 添加个人信息卡片 -->
+                    <div class="identity-add-patient-card" id="add-self-card" onclick="window.adCareApp.openAddSelfModal()">
+                        <div class="add-self-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="16"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                            </svg>
+                        </div>
+                        <div class="add-self-text">
+                            <span class="add-self-title">添加个人信息</span>
+                            <span class="add-self-desc">为自己进行评估</span>
+                        </div>
+                        <div class="add-self-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9,18 15,12 9,6"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
                     <div class="identity-patient-list" id="identity-patient-list">
                         <!-- 动态填充 -->
                     </div>
@@ -69,6 +90,51 @@
                         <button id="btn-back-preselected" class="btn btn-secondary" style="display:none;">返回</button>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- 添加个人信息模态框 -->
+        <div id="add-self-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>添加个人信息</h3>
+                    <button class="modal-close" onclick="window.adCareApp.closeAddSelfModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <form id="add-self-form" class="modal-form">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" id="self-name" required placeholder="请输入您的姓名" class="form-input">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>年龄</label>
+                            <input type="number" id="self-age" required min="1" max="150" placeholder="岁" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>性别</label>
+                            <div class="gender-select">
+                                <label class="gender-option">
+                                    <input type="radio" name="self-gender" value="男" checked>
+                                    <span>男</span>
+                                </label>
+                                <label class="gender-option">
+                                    <input type="radio" name="self-gender" value="女">
+                                    <span>女</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>房间号 / 住址</label>
+                        <input type="text" id="self-room" required placeholder="例如：2号楼-402" class="form-input">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-large btn-block">确认添加并开始评估</button>
+                </form>
             </div>
         </div>
 
@@ -501,6 +567,17 @@
                 document.getElementById('btn-anonymous').addEventListener('click', () => this.anonymousAssessment());
                 document.getElementById('btn-back-preselected').addEventListener('click', () => this.showIdentityPreselected());
                 document.getElementById('identity-search-input').addEventListener('input', (e) => this.filterIdentityList(e.target.value));
+                
+                // 添加个人信息表单
+                document.getElementById('add-self-modal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('add-self-modal')) {
+                        this.closeAddSelfModal();
+                    }
+                });
+                document.getElementById('add-self-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleAddSelfSubmit();
+                });
 
                 document.getElementById('btn-consent').addEventListener('click', () => this.handleConsent());
                 document.getElementById('btn-decline').addEventListener('click', () => this.handleDecline());
@@ -666,6 +743,55 @@
                     this.showIdentityList();
                 }
                 this.showScreen('identity');
+            }
+            
+            // 打开添加个人信息模态框
+            openAddSelfModal() {
+                document.getElementById('add-self-modal').classList.add('active');
+                document.getElementById('self-name').focus();
+            }
+            
+            // 关闭添加个人信息模态框
+            closeAddSelfModal() {
+                document.getElementById('add-self-modal').classList.remove('active');
+                document.getElementById('add-self-form').reset();
+            }
+            
+            // 处理添加个人信息表单提交
+            handleAddSelfSubmit() {
+                const name = document.getElementById('self-name').value.trim();
+                const age = parseInt(document.getElementById('self-age').value);
+                const gender = document.querySelector('input[name="self-gender"]:checked').value;
+                const room = document.getElementById('self-room').value.trim();
+                
+                if (!name || !age || !room) {
+                    return;
+                }
+                
+                const patients = JSON.parse(localStorage.getItem('portal_patients') || '[]');
+                const now = new Date();
+                const regTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                
+                const newPatient = {
+                    id: Date.now(),
+                    name: name,
+                    age: age,
+                    gender: gender,
+                    room: room,
+                    status: 'pending',
+                    lastCheck: null,
+                    regTime: regTime
+                };
+                
+                patients.unshift(newPatient);
+                localStorage.setItem('portal_patients', JSON.stringify(patients));
+                
+                this.closeAddSelfModal();
+                
+                // 自动选择刚添加的患者并开始评估
+                sessionStorage.setItem('currentPatientId', String(newPatient.id));
+                sessionStorage.removeItem('preparationCompleted');
+                this.showScreen('preparation');
             }
 
             showIdentityPreselected() {
@@ -976,6 +1102,7 @@
             async startAssessment() {
                 sessionStorage.setItem('preparationCompleted', 'true');
                 this.showScreen('assessment');
+                this.pausedRecordingTime = 0;
                 await this.mediaRecorder.startRecording();
                 this.startRecordingTimer();
                 this.isRecording = true;
@@ -996,8 +1123,9 @@
 
             startRecordingTimer() {
                 this.recordingStartTime = Date.now();
+                const savedTime = this.pausedRecordingTime || 0;
                 this.recordingInterval = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                    const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000) + savedTime;
                     const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
                     const seconds = (elapsed % 60).toString().padStart(2, '0');
                     document.getElementById('recording-time').textContent = `${minutes}:${seconds}`;
@@ -1097,21 +1225,43 @@
 
             async confirmExit() {
                 this.hideExitModal();
-                try {
-                    await this.stopAssessment();
-                } catch (e) {
-                    console.warn('Stop assessment failed:', e);
+                this.isRecording = false;
+                clearInterval(this.recordingInterval);
+                
+                // 保存当前录制时间
+                if (this.recordingStartTime) {
+                    const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                    this.pausedRecordingTime = (this.pausedRecordingTime || 0) + elapsed;
                 }
+                
+                try {
+                    await this.mediaRecorder.pauseRecording();
+                } catch (e) {
+                    console.warn('Pause recording failed:', e);
+                }
+                this.dataLogger.logEvent('assessment_exit', {});
+                this.updateResultSummary();
                 this.showScreen('result');
             }
 
-            quitAssessment() {
+            async quitAssessment() {
                 document.getElementById('pause-modal').classList.remove('active');
-                try {
-                    this.stopAssessment();
-                } catch (e) {
-                    console.warn('Stop assessment failed:', e);
+                this.isRecording = false;
+                clearInterval(this.recordingInterval);
+                
+                // 保存当前录制时间
+                if (this.recordingStartTime) {
+                    const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                    this.pausedRecordingTime = (this.pausedRecordingTime || 0) + elapsed;
                 }
+                
+                try {
+                    await this.mediaRecorder.pauseRecording();
+                } catch (e) {
+                    console.warn('Pause recording failed:', e);
+                }
+                this.dataLogger.logEvent('assessment_quit', {});
+                this.updateResultSummary();
                 this.showScreen('result');
             }
 
@@ -1124,7 +1274,10 @@
             }
 
             updateResultSummary() {
-                const duration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                let duration = this.pausedRecordingTime || 0;
+                if (this.recordingStartTime && this.isRecording) {
+                    duration += Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                }
                 const minutes = Math.floor(duration / 60);
                 const seconds = duration % 60;
                 document.getElementById('total-time').textContent = `${minutes}分${seconds}秒`;
@@ -1159,8 +1312,11 @@
                 this.updatePatientStatusAfterAssessment();
             }
 
-            resumeFromResult() {
+            async resumeFromResult() {
                 this.showScreen('assessment');
+                await this.mediaRecorder.resumeRecording();
+                this.isRecording = true;
+                this.startRecordingTimer();
                 this.dataLogger.logEvent('assessment_resumed_from_result', {});
             }
 
