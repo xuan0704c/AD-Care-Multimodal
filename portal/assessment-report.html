@@ -298,28 +298,28 @@
                                 : '关键词提取成功率 65%，出现多次无意义语义重复。')
                     },
                     {
-                        key: 'gait',
-                        name: '步态与姿态',
-                        icon: 'mdi:walk',
+                        key: 'emotion',
+                        name: '情绪稳定度',
+                        icon: 'mdi:emoticon',
                         iconColor: 'blue',
                         score: Math.min(100, Math.max(40, overallScore + Math.floor(rng() * 20 - 10))),
                         statusText: overallScore >= 80 ? '正常' : (overallScore >= 60 ? '轻度波动' : '异常'),
                         statusColor: overallScore >= 80 ? 'green' : (overallScore >= 60 ? 'yellow' : 'red'),
                         detail: overallScore >= 80
-                            ? '步频稳定，左右脚支撑力矩平衡，无明显偏移。'
+                            ? '情绪状态稳定，无明显波动，情绪表达自然。'
                             : (overallScore >= 60
-                                ? '步频减慢 8%，左右脚支撑力矩不平衡率为 12%。'
-                                : '步频减慢 15%，支撑力矩不平衡率达 20%，存在跌倒风险。')
+                                ? '情绪波动频率为 12%，需关注情绪变化趋势。'
+                                : '情绪波动明显，建议进行情绪干预和心理疏导。')
                     },
                     {
-                        key: 'physio',
-                        name: '生理指标',
-                        icon: 'mdi:heart-pulse',
+                        key: 'response',
+                        name: '指令响应灵敏度',
+                        icon: 'mdi:flash',
                         iconColor: 'green',
                         score: Math.min(100, Math.max(60, overallScore + Math.floor(rng() * 16 - 8))),
                         statusText: '正常',
                         statusColor: 'green',
-                        detail: '心率及呼吸频率在监测期间表现平稳，无应激反应。'
+                        detail: '指令响应时间在正常范围内，反应敏捷度良好。'
                     }
                 ];
 
