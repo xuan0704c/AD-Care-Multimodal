@@ -17,20 +17,6 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             margin: 20px auto;
         }
-        @media (min-width: 768px) {
-            .app-container {
-                width: 100%;
-                max-width: 900px;
-                height: auto;
-                min-height: 100vh;
-                border-radius: 0;
-                margin: 0 auto;
-            }
-            body {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 20px;
-            }
-        }
         .scroll-container::-webkit-scrollbar { display: none; }
         .modal-overlay {
             position: absolute;
@@ -53,143 +39,382 @@
         .modal-overlay.active .modal-content {
             transform: translateY(0);
         }
+        .desktop-only { display: none; }
+        @media (min-width: 768px) {
+            .app-container {
+                width: 100%;
+                max-width: 900px;
+                height: auto;
+                min-height: 100vh;
+                border-radius: 0;
+                margin: 0 auto;
+            }
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 20px;
+            }
+            .mobile-only { display: none !important; }
+            .desktop-only { display: block; }
+        }
+        @media (max-width: 767px) {
+            .mobile-only { display: block !important; }
+            .desktop-only { display: none !important; }
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-    <div class="app-container flex flex-col">
-        <!-- 顶部状态栏 -->
-        <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs font-bold bg-white">
-            <span id="clock">09:41</span>
-            <div class="flex gap-1">
-                <iconify-icon class="text-gray-800" icon="mdi:signal"></iconify-icon>
-                <iconify-icon class="text-gray-800" icon="mdi:wifi"></iconify-icon>
-                <iconify-icon class="text-gray-800" icon="mdi:battery"></iconify-icon>
+<body>
+    <!-- 移动端布局 -->
+    <div class="mobile-only flex items-center justify-center min-h-screen">
+        <div class="app-container flex flex-col">
+            <!-- 顶部状态栏 -->
+            <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs font-bold bg-white">
+                <span id="clock">09:41</span>
+                <div class="flex gap-1">
+                    <iconify-icon class="text-gray-800" icon="mdi:signal"></iconify-icon>
+                    <iconify-icon class="text-gray-800" icon="mdi:wifi"></iconify-icon>
+                    <iconify-icon class="text-gray-800" icon="mdi:battery"></iconify-icon>
+                </div>
             </div>
-        </div>
 
-        <!-- 顶部导航 -->
-        <div class="px-5 py-4 bg-white shadow-sm flex items-center justify-between">
-            <h1 class="text-xl font-bold text-gray-800">患者管理</h1>
-            <div class="flex gap-4 text-gray-600">
-                <iconify-icon icon="mdi:magnify" width="24"></iconify-icon>
-                <iconify-icon class="relative" icon="mdi:bell-outline" width="24">
-                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                </iconify-icon>
+            <!-- 顶部导航 -->
+            <div class="px-5 py-4 bg-white shadow-sm flex items-center justify-between">
+                <h1 class="text-xl font-bold text-gray-800">患者管理</h1>
+                <div class="flex gap-4 text-gray-600">
+                    <iconify-icon icon="mdi:magnify" width="24"></iconify-icon>
+                    <iconify-icon class="relative" icon="mdi:bell-outline" width="24">
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                    </iconify-icon>
+                </div>
             </div>
-        </div>
 
-        <!-- 数据看板 -->
-        <div class="p-4 grid grid-cols-3 gap-3">
-            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                <p class="text-[10px] text-blue-600 font-medium mb-1">今日筛查</p>
-                <p class="text-xl font-bold text-blue-900" id="today-count">0</p>
+            <!-- 数据看板 -->
+            <div class="p-4 grid grid-cols-3 gap-3">
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <p class="text-[10px] text-blue-600 font-medium mb-1">今日筛查</p>
+                    <p class="text-xl font-bold text-blue-900" id="today-count">0</p>
+                </div>
+                <div class="bg-red-50 p-3 rounded-xl border border-red-100">
+                    <p class="text-[10px] text-red-600 font-medium mb-1">高风险预警</p>
+                    <p class="text-xl font-bold text-red-900" id="risk-count">0</p>
+                </div>
+                <div class="bg-green-50 p-3 rounded-xl border border-green-100">
+                    <p class="text-[10px] text-green-600 font-medium mb-1">社区总覆盖</p>
+                    <p class="text-xl font-bold text-green-900" id="total-count">0</p>
+                </div>
             </div>
-            <div class="bg-red-50 p-3 rounded-xl border border-red-100">
-                <p class="text-[10px] text-red-600 font-medium mb-1">高风险预警</p>
-                <p class="text-xl font-bold text-red-900" id="risk-count">0</p>
+
+            <!-- 筛选Tab -->
+            <div class="px-4 flex gap-4 text-sm font-medium border-b border-gray-100 bg-white">
+                <button class="pb-2 border-b-2 border-blue-600 text-blue-600" id="tab-all" onclick="filterPatients('all')">全部</button>
+                <button class="pb-2 text-gray-500" id="tab-pending" onclick="filterPatients('pending')">待筛查</button>
+                <button class="pb-2 text-gray-500" id="tab-risk" onclick="filterPatients('risk')">高风险</button>
             </div>
-            <div class="bg-green-50 p-3 rounded-xl border border-green-100">
-                <p class="text-[10px] text-green-600 font-medium mb-1">社区总覆盖</p>
-                <p class="text-xl font-bold text-green-900" id="total-count">0</p>
+
+            <!-- 患者列表 -->
+            <div class="flex-1 overflow-y-auto scroll-container p-4 space-y-4 pb-24" id="patient-list">
+                <!-- 动态渲染 -->
             </div>
-        </div>
 
-        <!-- 筛选Tab -->
-        <div class="px-4 flex gap-4 text-sm font-medium border-b border-gray-100 bg-white">
-            <button class="pb-2 border-b-2 border-blue-600 text-blue-600" id="tab-all" onclick="filterPatients('all')">全部</button>
-            <button class="pb-2 text-gray-500" id="tab-pending" onclick="filterPatients('pending')">待筛查</button>
-            <button class="pb-2 text-gray-500" id="tab-risk" onclick="filterPatients('risk')">高风险</button>
-        </div>
-
-        <!-- 患者列表 -->
-        <div class="flex-1 overflow-y-auto scroll-container p-4 space-y-4 pb-24" id="patient-list">
-            <!-- 动态渲染 -->
-        </div>
-
-        <!-- 悬浮新增按钮 -->
-        <button onclick="openModal()" class="absolute bottom-24 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
-            <iconify-icon icon="mdi:plus" width="32"></iconify-icon>
-        </button>
-
-        <!-- 底部导航栏 -->
-        <div class="absolute bottom-0 left-0 right-0 bg-white h-20 border-t border-gray-100 flex items-center justify-around pb-4">
-            <a href="dashboard.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
-                <iconify-icon icon="mdi:home" width="24"></iconify-icon>
-                <span class="text-[10px] mt-1">工作台</span>
-            </a>
-            <div class="flex flex-col items-center text-blue-600">
-                <iconify-icon icon="mdi:account-group" width="24"></iconify-icon>
-                <span class="text-[10px] mt-1 font-bold">患者列表</span>
-            </div>
-            <button onclick="enterAssessment()" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
-                <iconify-icon icon="mdi:play-circle" width="24"></iconify-icon>
-                <span class="text-[10px] mt-1">开始评估</span>
+            <!-- 悬浮新增按钮 -->
+            <button onclick="openModal()" class="absolute bottom-24 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
+                <iconify-icon icon="mdi:plus" width="32"></iconify-icon>
             </button>
-            <a href="profile.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
-                <iconify-icon icon="mdi:account" width="24"></iconify-icon>
-                <span class="text-[10px] mt-1">我的</span>
-            </a>
-        </div>
 
-        <!-- 患者详情模态框 -->
-        <div class="modal-overlay" id="detail-modal">
-            <div class="modal-content">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-lg font-bold text-gray-800">患者详情</h2>
-                    <button onclick="closeDetailModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
-                        <iconify-icon icon="mdi:close" width="20"></iconify-icon>
-                    </button>
+            <!-- 底部导航栏 -->
+            <div class="absolute bottom-0 left-0 right-0 bg-white h-20 border-t border-gray-100 flex items-center justify-around pb-4">
+                <a href="dashboard.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                    <iconify-icon icon="mdi:home" width="24"></iconify-icon>
+                    <span class="text-[10px] mt-1">工作台</span>
+                </a>
+                <div class="flex flex-col items-center text-blue-600">
+                    <iconify-icon icon="mdi:account-group" width="24"></iconify-icon>
+                    <span class="text-[10px] mt-1 font-bold">患者列表</span>
                 </div>
-                <div id="detail-body" class="space-y-4">
-                    <!-- 动态填充 -->
+                <button onclick="enterAssessment()" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                    <iconify-icon icon="mdi:play-circle" width="24"></iconify-icon>
+                    <span class="text-[10px] mt-1">开始评估</span>
+                </button>
+                <a href="profile.html" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
+                    <iconify-icon icon="mdi:account" width="24"></iconify-icon>
+                    <span class="text-[10px] mt-1">我的</span>
+                </a>
+            </div>
+
+            <!-- 患者详情模态框 -->
+            <div class="modal-overlay" id="detail-modal">
+                <div class="modal-content">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-bold text-gray-800">患者详情</h2>
+                        <button onclick="closeDetailModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                            <iconify-icon icon="mdi:close" width="20"></iconify-icon>
+                        </button>
+                    </div>
+                    <div id="detail-body" class="space-y-4">
+                        <!-- 动态填充 -->
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 添加患者模态框 -->
-        <div class="modal-overlay" id="add-modal">
-            <div class="modal-content">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-lg font-bold text-gray-800">添加患者信息</h2>
-                    <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
-                        <iconify-icon icon="mdi:close" width="20"></iconify-icon>
-                    </button>
-                </div>
-                <form id="add-patient-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1 font-medium">姓名</label>
-                        <input type="text" id="p-name" required placeholder="请输入患者姓名" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <!-- 添加患者模态框 -->
+            <div class="modal-overlay" id="add-modal">
+                <div class="modal-content">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-bold text-gray-800">添加患者信息</h2>
+                        <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                            <iconify-icon icon="mdi:close" width="20"></iconify-icon>
+                        </button>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <form id="add-patient-form" class="space-y-4">
                         <div>
-                            <label class="block text-xs text-gray-500 mb-1 font-medium">年龄</label>
-                            <input type="number" id="p-age" required min="1" max="150" placeholder="岁" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                            <label class="block text-xs text-gray-500 mb-1 font-medium">姓名</label>
+                            <input type="text" id="p-name" required placeholder="请输入患者姓名" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1 font-medium">年龄</label>
+                                <input type="number" id="p-age" required min="1" max="150" placeholder="岁" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1 font-medium">性别</label>
+                                <div class="flex gap-2">
+                                    <label class="flex-1 flex items-center justify-center gap-1 px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-blue-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400 transition-colors">
+                                        <input type="radio" name="p-gender" value="男" checked class="accent-blue-600">
+                                        <span class="text-sm">男</span>
+                                    </label>
+                                    <label class="flex-1 flex items-center justify-center gap-1 px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-pink-50 has-[:checked]:bg-pink-50 has-[:checked]:border-pink-400 transition-colors">
+                                        <input type="radio" name="p-gender" value="女" class="accent-pink-500">
+                                        <span class="text-sm">女</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 mb-1 font-medium">性别</label>
-                            <div class="flex gap-2">
-                                <label class="flex-1 flex items-center justify-center gap-1 px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-blue-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400 transition-colors">
-                                    <input type="radio" name="p-gender" value="男" checked class="accent-blue-600">
-                                    <span class="text-sm">男</span>
-                                </label>
-                                <label class="flex-1 flex items-center justify-center gap-1 px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-pink-50 has-[:checked]:bg-pink-50 has-[:checked]:border-pink-400 transition-colors">
-                                    <input type="radio" name="p-gender" value="女" class="accent-pink-500">
-                                    <span class="text-sm">女</span>
-                                </label>
+                            <label class="block text-xs text-gray-500 mb-1 font-medium">房间号 / 住址</label>
+                            <input type="text" id="p-room" required placeholder="例如：2号楼-402" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+                                确认添加
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 桌面端布局 -->
+    <div class="desktop-only" style="min-height: 100vh; padding: 20px; box-sizing: border-box;">
+        <div class="mx-auto" style="max-width: 1200px;">
+            <!-- 顶部导航 -->
+            <header class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                            <iconify-icon class="text-white text-2xl" icon="mdi:brain"></iconify-icon>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">智慧忆护</h1>
+                            <p class="text-gray-500 text-sm">患者管理</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <a href="dashboard.html" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors text-gray-700 font-medium">
+                            <iconify-icon icon="mdi:arrow-left" width="18"></iconify-icon>
+                            返回工作台
+                        </a>
+                        <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold" id="desktop-user-avatar">李</div>
+                            <div>
+                                <p class="font-medium text-gray-800" id="desktop-user-name">李医生</p>
+                                <p class="text-xs text-gray-500">社区健康服务中心</p>
                             </div>
                         </div>
                     </div>
+                </div>
+            </header>
+
+            <!-- 渐变色标题栏 -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg mb-6">
+                <div class="flex items-center justify-between">
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1 font-medium">房间号 / 住址</label>
-                        <input type="text" id="p-room" required placeholder="例如：2号楼-402" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        <h2 class="text-2xl font-bold">患者管理中心</h2>
+                        <p class="text-blue-100 mt-1">管理社区老年患者档案，跟踪认知健康状态</p>
                     </div>
-                    <div class="pt-2">
-                        <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
-                            确认添加
-                        </button>
-                    </div>
-                </form>
+                    <iconify-icon icon="mdi:account-group" width="48" class="text-white/30"></iconify-icon>
+                </div>
             </div>
+
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-gray-500 text-sm">总患者数</p>
+                        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                            <iconify-icon icon="mdi:account-group" width="20" class="text-blue-600"></iconify-icon>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-blue-600" id="desktop-total-count">0</p>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-gray-500 text-sm">待筛查数</p>
+                        <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                            <iconify-icon icon="mdi:clipboard-alert" width="20" class="text-yellow-600"></iconify-icon>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-yellow-600" id="desktop-pending-count">0</p>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-gray-500 text-sm">本月新增</p>
+                        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                            <iconify-icon icon="mdi:trending-up" width="20" class="text-green-600"></iconify-icon>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-green-600" id="desktop-new-count">0</p>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-4 gap-6">
+                <!-- 左侧主要内容 -->
+                <div class="lg:col-span-3 space-y-6">
+                    <!-- 搜索筛选栏 -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <div class="relative flex-1 min-w-[200px]">
+                                <iconify-icon icon="mdi:magnify" width="20" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></iconify-icon>
+                                <input type="text" id="desktop-search" placeholder="搜索患者姓名或ID..." class="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <select id="desktop-filter-status" class="px-4 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
+                                <option value="all">全部状态</option>
+                                <option value="pending">待筛查</option>
+                                <option value="good">已完成</option>
+                                <option value="risk">高风险</option>
+                            </select>
+                            <button onclick="openDesktopAddModal()" class="flex items-center gap-2 px-6 py-2 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors shadow-md">
+                                <iconify-icon icon="mdi:plus" width="18"></iconify-icon>
+                                添加患者
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 患者列表表格 -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">患者列表</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="border-b border-gray-100">
+                                        <th class="pb-3 text-sm font-bold text-gray-500">姓名</th>
+                                        <th class="pb-3 text-sm font-bold text-gray-500">年龄</th>
+                                        <th class="pb-3 text-sm font-bold text-gray-500">性别</th>
+                                        <th class="pb-3 text-sm font-bold text-gray-500">最近筛查</th>
+                                        <th class="pb-3 text-sm font-bold text-gray-500">状态</th>
+                                        <th class="pb-3 text-sm font-bold text-gray-500 text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="desktop-patient-list">
+                                    <!-- 动态渲染 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧快速操作 -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">快速操作</h3>
+                        <div class="space-y-3">
+                            <button class="w-full flex items-center gap-3 p-4 bg-gray-50 rounded-xl hover:bg-blue-50 hover:shadow-md transition-all group">
+                                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                    <iconify-icon icon="mdi:file-upload" width="20"></iconify-icon>
+                                </div>
+                                <span class="text-sm font-medium text-gray-700">批量导入</span>
+                            </button>
+                            <button class="w-full flex items-center gap-3 p-4 bg-gray-50 rounded-xl hover:bg-green-50 hover:shadow-md transition-all group">
+                                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform">
+                                    <iconify-icon icon="mdi:file-download" width="20"></iconify-icon>
+                                </div>
+                                <span class="text-sm font-medium text-gray-700">导出数据</span>
+                            </button>
+                            <button class="w-full flex items-center gap-3 p-4 bg-gray-50 rounded-xl hover:bg-purple-50 hover:shadow-md transition-all group">
+                                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                                    <iconify-icon icon="mdi:clipboard-text" width="20"></iconify-icon>
+                                </div>
+                                <span class="text-sm font-medium text-gray-700">评估模板</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部版权 -->
+            <footer class="mt-8 text-center text-gray-400 text-sm">
+                <p>国家老年疾病临床医学研究中心 提供技术支持</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- 桌面端详情模态框 -->
+    <div id="desktop-detail-modal" class="desktop-only fixed inset-0 bg-black/50 hidden items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-bold text-gray-800">患者详情</h2>
+                <button onclick="closeDesktopDetailModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                    <iconify-icon icon="mdi:close" width="20"></iconify-icon>
+                </button>
+            </div>
+            <div id="desktop-detail-body" class="space-y-4">
+                <!-- 动态填充 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 桌面端添加患者模态框 -->
+    <div id="desktop-add-modal" class="desktop-only fixed inset-0 bg-black/50 hidden items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-bold text-gray-800">添加患者信息</h2>
+                <button onclick="closeDesktopAddModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                    <iconify-icon icon="mdi:close" width="20"></iconify-icon>
+                </button>
+            </div>
+            <form id="desktop-add-patient-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1 font-medium">姓名</label>
+                    <input type="text" id="desktop-p-name" required placeholder="请输入患者姓名" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1 font-medium">年龄</label>
+                        <input type="number" id="desktop-p-age" required min="1" max="150" placeholder="岁" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1 font-medium">性别</label>
+                        <div class="flex gap-2">
+                            <label class="flex-1 flex items-center justify-center gap-1 px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-blue-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400 transition-colors">
+                                <input type="radio" name="desktop-p-gender" value="男" checked class="accent-blue-600">
+                                <span class="text-sm">男</span>
+                            </label>
+                            <label class="flex-1 flex items-center justify-center gap-1 px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-pink-50 has-[:checked]:bg-pink-50 has-[:checked]:border-pink-400 transition-colors">
+                                <input type="radio" name="desktop-p-gender" value="女" class="accent-pink-500">
+                                <span class="text-sm">女</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1 font-medium">房间号 / 住址</label>
+                    <input type="text" id="desktop-p-room" required placeholder="例如：2号楼-402" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+                        确认添加
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -219,9 +444,6 @@
             }
             window.location.href = '../index.html';
         }
-
-        // 个人中心
-        // 点击"我的"跳转到个人中心页面
 
         // ===== 患者数据管理 =====
         const STORAGE_KEY = 'portal_patients';
@@ -446,11 +668,204 @@
             patients.unshift(newPatient);
             savePatients(patients);
             renderPatients();
+            renderDesktopPatients();
             closeModal();
         });
 
+        // ===== 桌面端功能 =====
+        function renderDesktopPatients() {
+            const patients = loadPatients();
+            const container = document.getElementById('desktop-patient-list');
+            if (!container) return;
+
+            const searchVal = document.getElementById('desktop-search')?.value?.trim().toLowerCase() || '';
+            const statusFilter = document.getElementById('desktop-filter-status')?.value || 'all';
+
+            let filtered = patients;
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(p => p.status === statusFilter);
+            }
+            if (searchVal) {
+                filtered = filtered.filter(p => p.name.includes(searchVal) || String(p.id).includes(searchVal));
+            }
+
+            // 更新统计
+            const desktopTotal = document.getElementById('desktop-total-count');
+            const desktopPending = document.getElementById('desktop-pending-count');
+            const desktopNew = document.getElementById('desktop-new-count');
+            if (desktopTotal) desktopTotal.textContent = patients.length;
+            if (desktopPending) desktopPending.textContent = patients.filter(p => p.status === 'pending').length;
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            if (desktopNew) desktopNew.textContent = patients.filter(p => p.regTime && p.regTime.startsWith(currentMonth)).length;
+
+            container.innerHTML = '';
+            if (filtered.length === 0) {
+                container.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400">暂无符合条件的患者</td></tr>';
+                return;
+            }
+
+            filtered.forEach(p => {
+                const cfg = getStatusConfig(p.status);
+                const lastText = p.lastCheck ? p.lastCheck : '暂无';
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-50 hover:bg-gray-50 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full border-2 ${cfg.border} bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm">${getFirstChar(p.name)}</div>
+                            <span class="font-bold text-gray-800">${p.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 text-gray-700">${p.age}</td>
+                    <td class="py-4 text-gray-700">${p.gender}</td>
+                    <td class="py-4 text-gray-500 text-sm">${lastText}</td>
+                    <td class="py-4">
+                        <span class="${cfg.bg} ${cfg.text} px-3 py-1 rounded-lg text-xs font-bold">${cfg.label}</span>
+                    </td>
+                    <td class="py-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="openDesktopDetailModal(${p.id})" class="p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="查看">
+                                <iconify-icon icon="mdi:eye" width="18"></iconify-icon>
+                            </button>
+                            <button onclick="enterAssessment(${p.id})" class="p-2 text-gray-500 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors" title="开始评估">
+                                <iconify-icon icon="mdi:play-circle" width="18"></iconify-icon>
+                            </button>
+                            <button onclick="deletePatient(${p.id})" class="p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors" title="删除">
+                                <iconify-icon icon="mdi:delete" width="18"></iconify-icon>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function deletePatient(id) {
+            if (!confirm('确定要删除该患者吗？')) return;
+            const patients = loadPatients().filter(p => p.id !== id);
+            savePatients(patients);
+            renderPatients();
+            renderDesktopPatients();
+        }
+
+        function openDesktopDetailModal(patientId) {
+            const patients = loadPatients();
+            const patient = patients.find(p => p.id === patientId);
+            if (!patient) return;
+            const modal = document.getElementById('desktop-detail-modal');
+            const body = document.getElementById('desktop-detail-body');
+            const cfg = getStatusConfig(patient.status);
+            const lastText = patient.lastCheck ? `上次评估：${patient.lastCheck}` : '暂无评估记录';
+
+            body.innerHTML = `
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-16 h-16 rounded-full border-2 ${cfg.border} bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xl">${getFirstChar(patient.name)}</div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">${patient.name}</h3>
+                        <p class="text-sm text-gray-500">${patient.age}岁 · ${patient.gender}</p>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-xs text-gray-400">房间号 / 住址</span>
+                        <span class="text-sm font-medium text-gray-700">${patient.room}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-xs text-gray-400">档案注册时间</span>
+                        <span class="text-sm font-medium text-gray-700">${patient.regTime || '--'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-xs text-gray-400">当前状态</span>
+                        <span class="text-sm font-bold ${cfg.text}">${cfg.label}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-xs text-gray-400">评估记录</span>
+                        <span class="text-sm font-medium text-gray-700">${lastText}</span>
+                    </div>
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button onclick="closeDesktopDetailModal(); enterAssessment(${patient.id});" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+                        开始评估
+                    </button>
+                    <button onclick="closeDesktopDetailModal();" class="px-6 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                        关闭
+                    </button>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeDesktopDetailModal() {
+            document.getElementById('desktop-detail-modal').style.display = 'none';
+        }
+
+        document.getElementById('desktop-detail-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeDesktopDetailModal();
+        });
+
+        document.getElementById('desktop-search')?.addEventListener('input', renderDesktopPatients);
+        document.getElementById('desktop-filter-status')?.addEventListener('change', renderDesktopPatients);
+
+        // 桌面端添加患者模态框控制
+        function openDesktopAddModal() {
+            document.getElementById('desktop-add-modal').style.display = 'flex';
+            document.getElementById('desktop-p-name').focus();
+        }
+
+        function closeDesktopAddModal() {
+            document.getElementById('desktop-add-modal').style.display = 'none';
+            document.getElementById('desktop-add-patient-form').reset();
+        }
+
+        document.getElementById('desktop-add-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeDesktopAddModal();
+        });
+
+        document.getElementById('desktop-add-patient-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('desktop-p-name').value.trim();
+            const age = parseInt(document.getElementById('desktop-p-age').value);
+            const gender = document.querySelector('input[name="desktop-p-gender"]:checked').value;
+            const room = document.getElementById('desktop-p-room').value.trim();
+
+            if (!name || !age || !room) return;
+
+            const patients = loadPatients();
+            const now = new Date();
+            const regTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            const newPatient = {
+                id: Date.now(),
+                name,
+                age,
+                gender,
+                room,
+                status: 'pending',
+                lastCheck: null,
+                regTime
+            };
+
+            patients.unshift(newPatient);
+            savePatients(patients);
+            renderPatients();
+            renderDesktopPatients();
+            closeDesktopAddModal();
+        });
+
+        // 显示已保存的用户名
+        const savedUsername = localStorage.getItem('portal_username');
+        if (savedUsername) {
+            const desktopUserName = document.getElementById('desktop-user-name');
+            if (desktopUserName) desktopUserName.textContent = savedUsername + '医生';
+            const desktopUserAvatar = document.getElementById('desktop-user-avatar');
+            if (desktopUserAvatar) desktopUserAvatar.textContent = savedUsername.charAt(0);
+        }
+
         // 初始化渲染
         renderPatients();
+        renderDesktopPatients();
     </script>
 </body>
 </html>
